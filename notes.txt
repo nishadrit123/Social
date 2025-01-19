@@ -1,0 +1,8 @@
+All env vars are loaded from .env in root folder
+air init creates an air.toml file where instructions to run the application exists 
+To run:
+    1. Do "air" (go hot reload)
+
+To push 
+    1. Do git push origin master 
+    2. Enter something passphrase
