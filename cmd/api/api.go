@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"social/internal/store"
 	"time"
 
 	"github.com/go-chi/chi/middleware"
@@ -15,6 +16,7 @@ type config struct {
 
 type application struct {
 	config config
+	store  store.Storage
 }
 
 func (app *application) mount() http.Handler {
