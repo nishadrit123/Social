@@ -10,8 +10,16 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+type dbConfig struct {
+	addr         string
+	maxOpenConns int
+	maxIdleConns int
+	maxIdleTime  string
+}
+
 type config struct {
 	addr string
+	db   dbConfig
 }
 
 type application struct {
