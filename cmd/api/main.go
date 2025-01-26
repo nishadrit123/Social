@@ -36,7 +36,7 @@ func main() {
 
 	defer db.Close()
 	log.Printf("database connection pool established")
-	store := store.NewStorage(nil)
+	store := store.NewStorage(db)
 	app := &application{
 		config: *cfg,
 		store:  store,
