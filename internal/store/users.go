@@ -17,21 +17,55 @@ type User struct {
 	CreatedAt string `json:"created_at"`
 }
 
-func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
+func (s *UserStore) Create(ctx context.Context, user *User) error {
 	query := `
-		INSERT INTO users (username, password, email, role_id) VALUES 
-	($1, $2, $3, (SELECT id FROM roles WHERE name = $4))
-	RETURNING id, created_at
+		INSERT INTO users (username, password, email) VALUES 
+		($1, $2, $3)
+		RETURNING id, created_at
 	`
-
-	err := tx.QueryRowContext(
+	err := s.db.QueryRowContext(
 		ctx,
 		query,
 		user.Username,
+		user.Password,
 		user.Email,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,
 	)
 	return err
+}
+
+func (s *UserStore) GetByID(ctx context.Context, userID int64) (*User, error) {
+	query := `
+		SELECT users.id, username, email, password, created_at
+		FROM users
+		WHERE users.id = $1
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	user := &User{}
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		userID,
+	).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.Password,
+		&user.CreatedAt,
+	)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return user, nil
 }
