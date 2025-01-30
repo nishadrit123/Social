@@ -1,13 +1,13 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"social/internal/store"
 	"time"
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 )
 
 type dbConfig struct {
@@ -25,6 +25,7 @@ type config struct {
 type application struct {
 	config config
 	store  store.Storage
+	logger *zap.SugaredLogger
 }
 
 func (app *application) mount() http.Handler {
@@ -72,9 +73,9 @@ func (app *application) run(mux http.Handler) error {
 		ReadTimeout:  10 * time.Second,
 		IdleTimeout:  time.Millisecond,
 	}
-	log.Printf("Started server on %v\n", app.config.addr)
+	app.logger.Info("Started server on %v\n", app.config.addr)
 	err := srv.ListenAndServe()
-	log.Printf("ListenAndServe is a blocking call and wint be executed unless it throws ant err %v", err)
+	app.logger.Info("ListenAndServe is a blocking call and wint be executed unless it throws ant err %v", err)
 	if err != nil {
 		return err
 	}

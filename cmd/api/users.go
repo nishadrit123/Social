@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -42,7 +41,6 @@ func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request
 
 	ctx := r.Context()
 	if err := app.store.Users.Create(ctx, user); err != nil {
-		fmt.Printf("err %v\n", err)
 		app.internalServerError(w, r, err)
 		return
 	}

@@ -1,18 +1,21 @@
 package main
 
 import (
-	"log"
 	"social/internal/db"
 	"social/internal/env"
 	"social/internal/store"
 
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 func main() {
+	logger := zap.Must(zap.NewProduction()).Sugar()
+	defer logger.Sync()
+
 	err := godotenv.Load()
 	if err != nil {
-		log.Println(err)
+		logger.Fatal(err)
 	}
 	cfg := &config{
 		addr: env.GetString("ADDR", ":8080"),
@@ -23,6 +26,7 @@ func main() {
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
 	}
+
 	// Main Database
 	db, err := db.New(
 		cfg.db.addr,
@@ -31,17 +35,18 @@ func main() {
 		cfg.db.maxIdleTime,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatal(err)
 	}
 
 	defer db.Close()
-	log.Printf("database connection pool established")
+	logger.Info("database connection pool established")
 	store := store.NewStorage(db)
 	app := &application{
 		config: *cfg,
 		store:  store,
+		logger: logger,
 	}
 	mux := app.mount()
 
-	log.Fatal(app.run(mux))
+	logger.Fatal(app.run(mux))
 }
