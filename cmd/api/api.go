@@ -20,6 +20,11 @@ type dbConfig struct {
 type config struct {
 	addr string
 	db   dbConfig
+	mail mailconfig
+}
+
+type mailconfig struct {
+	exp time.Duration
 }
 
 type application struct {
@@ -48,7 +53,8 @@ func (app *application) mount() http.Handler {
 		})
 
 		r.Route("/users", func(r chi.Router) {
-			r.Post("/", app.createUserHandler)
+			r.Put("/activate/{token}", app.activateUserHandler) // activate the registered user
+			r.Post("/", app.createUserHandler)                  // not used
 
 			r.Route("/{userID}", func(r chi.Router) {
 				r.Use(app.usersContextMiddleware)
@@ -59,6 +65,10 @@ func (app *application) mount() http.Handler {
 			r.Group(func(r chi.Router) {
 				r.Get("/feed", app.getUserFeedHandler)
 			})
+		})
+
+		r.Route("/authentication", func(r chi.Router) {
+			r.Post("/user", app.registerUserHandler) // registers the users and send them invites
 		})
 
 	})

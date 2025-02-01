@@ -4,6 +4,7 @@ import (
 	"social/internal/db"
 	"social/internal/env"
 	"social/internal/store"
+	"time"
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -17,6 +18,9 @@ func main() {
 	if err != nil {
 		logger.Fatal(err)
 	}
+	mail := &mailconfig{
+		exp: time.Hour * 24 * 3,
+	}
 	cfg := &config{
 		addr: env.GetString("ADDR", ":8080"),
 		db: dbConfig{
@@ -25,6 +29,7 @@ func main() {
 			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
+		mail: *mail,
 	}
 
 	// Main Database
