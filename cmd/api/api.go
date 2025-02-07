@@ -6,6 +6,7 @@ import (
 	"social/internal/env"
 	"social/internal/mailer"
 	"social/internal/store"
+	"social/internal/store/cache"
 	"time"
 
 	"github.com/go-chi/chi/middleware"
@@ -24,11 +25,18 @@ type dbConfig struct {
 type config struct {
 	addr        string
 	db          dbConfig
+	redisCfg    redisConfig
 	env         string
 	apiURL      string
 	mail        mailConfig
 	frontendURL string
 	auth        authConfig
+}
+
+type redisConfig struct {
+	addr string
+	pw   string
+	db   int
 }
 
 type mailConfig struct {
@@ -59,6 +67,7 @@ type tokenConfig struct {
 type application struct {
 	config        config
 	store         store.Storage
+	cacheStorage  cache.Storage
 	logger        *zap.SugaredLogger
 	mailer        mailer.Client
 	authenticator auth.Authenticator

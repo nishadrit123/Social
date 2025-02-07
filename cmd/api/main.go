@@ -6,6 +6,7 @@ import (
 	"social/internal/env"
 	"social/internal/mailer"
 	"social/internal/store"
+	"social/internal/store/cache"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -39,6 +40,11 @@ func main() {
 			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
+		redisCfg: redisConfig{
+			addr: env.GetString("REDIS_ADDR", "localhost:6379"),
+			pw:   env.GetString("REDIS_PW", ""),
+			db:   env.GetInt("REDIS_DB", 0),
+		},
 		mail: *mail,
 		auth: authConfig{
 			token: tokenConfig{
@@ -67,7 +73,16 @@ func main() {
 
 	defer db.Close()
 	logger.Info("database connection pool established")
+
+	// var rdb *redis.Client
+	rdb := cache.NewRedisClient(cfg.redisCfg.addr, cfg.redisCfg.pw, cfg.redisCfg.db)
+	logger.Info("redis cache connection established")
+
+	defer rdb.Close()
+
 	store := store.NewStorage(db)
+	cacheStorage := cache.NewRedisStorage(rdb) // redis
+
 	jwtAuthenticator := auth.NewJWTAuthenticator(
 		cfg.auth.token.secret,
 		cfg.auth.token.iss, // jwt issuer
@@ -76,6 +91,7 @@ func main() {
 	app := &application{
 		config:        *cfg,
 		store:         store,
+		cacheStorage:  cacheStorage,
 		logger:        logger,
 		mailer:        mailtrap,
 		authenticator: jwtAuthenticator,
