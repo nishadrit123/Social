@@ -29,14 +29,14 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// user := getUserFromContext(r)
+	user := getUserFromContext(r)
 
 	post := &store.Post{
 		Title:   payload.Title,
 		Content: payload.Content,
 		Tags:    payload.Tags,
-		// UserID:  user.ID,
-		UserID: payload.Userid,
+		UserID:  user.ID,
+		// UserID: payload.Userid,
 	}
 
 	ctx := r.Context()

@@ -86,8 +86,9 @@ func (app *application) mount() http.Handler {
 		r.Get("/health", app.healthCheckHandler)
 
 		r.Route("/posts", func(r chi.Router) {
-			r.Post("/", app.createPostHandler)
+			r.Use(app.AuthTokenMiddleware)
 
+			r.Post("/", app.createPostHandler)
 			r.Route("/{postID}", func(r chi.Router) {
 				r.Use(app.postsContextMiddleware)
 				r.Get("/", app.getPostHandler)
@@ -101,12 +102,15 @@ func (app *application) mount() http.Handler {
 			r.Post("/", app.createUserHandler)                  // not used
 
 			r.Route("/{userID}", func(r chi.Router) {
-				r.Use(app.usersContextMiddleware)
+				r.Use(app.AuthTokenMiddleware)
+				// r.Use(app.usersContextMiddleware) no longer needed since this reads db twice
 				r.Get("/", app.getUserHandler)
 				r.Put("/follow", app.followUserHandler)
 				r.Put("/unfollow", app.unfollowUserHandler)
 			})
 			r.Group(func(r chi.Router) {
+				r.Use(app.AuthTokenMiddleware)
+
 				r.Get("/feed", app.getUserFeedHandler)
 			})
 		})
