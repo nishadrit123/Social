@@ -13,14 +13,20 @@ type PostStore struct {
 }
 
 type Post struct {
-	ID        int64    `json:"id"`
-	Content   string   `json:"content"`
-	Title     string   `json:"title"`
-	UserID    int64    `json:"user_id"`
-	Tags      []string `json:"tags"`
-	CreatedAt string   `json:"created_at"`
-	UpdatedAt string   `json:"updated_at"`
-	User      User     `json:"user"`
+	ID        int64         `json:"id"`
+	Content   string        `json:"content"`
+	Title     string        `json:"title"`
+	UserID    int64         `json:"user_id"`
+	Tags      []string      `json:"tags"`
+	Comment   []PostComment `json:"comment"`
+	CreatedAt string        `json:"created_at"`
+	UpdatedAt string        `json:"updated_at"`
+	User      User          `json:"user"`
+}
+
+type PostComment struct {
+	Comment string `json:"comment"`
+	USerID  int64  `json:"user_id"`
 }
 
 type PostWithMetadata struct {
@@ -55,11 +61,31 @@ func (s *PostStore) GetByID(ctx context.Context, id int64) (*Post, error) {
 		WHERE id = $1
 	`
 
+	query_comment := `
+		SELECT comment, user_id
+		FROM comment
+		WHERE post_id = $1
+	`
+
+	var commentslice []PostComment
+	rows, err := s.db.QueryContext(ctx, query_comment, id)
+	if err == nil {
+		for rows.Next() {
+			var comment PostComment
+			err = rows.Scan(
+				&comment.Comment,
+				&comment.USerID,
+			)
+			if err == nil {
+				commentslice = append(commentslice, comment)
+			}
+		}
+	}
+
 	// ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	// defer cancel()
-
 	var post Post
-	err := s.db.QueryRowContext(ctx, query, id).Scan(
+	err = s.db.QueryRowContext(ctx, query, id).Scan(
 		&post.ID,
 		&post.UserID,
 		&post.Title,
@@ -75,6 +101,9 @@ func (s *PostStore) GetByID(ctx context.Context, id int64) (*Post, error) {
 		default:
 			return nil, err
 		}
+	}
+	if len(commentslice) > 0 {
+		post.Comment = commentslice
 	}
 
 	return &post, nil

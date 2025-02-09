@@ -14,5 +14,4 @@ To push
     b. Enter something passphrase
 
 Pending
-    a. Comments to posts 
-    b. Sending emails to users registered
+    a. Sending emails to users registered

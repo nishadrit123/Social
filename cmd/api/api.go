@@ -102,8 +102,22 @@ func (app *application) mount() http.Handler {
 				r.Use(app.postsContextMiddleware)
 				r.Get("/", app.getPostHandler)
 
-				r.Patch("/", app.checkPostOwnership("moderator", app.updatePostHandler))
-				r.Delete("/", app.checkPostOwnership("admin", app.deletePostHandler))
+				r.Patch("/", app.checkOwnership("moderator", "post", app.updatePostHandler))
+				r.Delete("/", app.checkOwnership("admin", "post", app.deletePostHandler))
+			})
+		})
+
+		r.Route("/comment", func(r chi.Router) {
+			r.Use(app.AuthTokenMiddleware)
+
+			r.Route("/post/{postID}", func(r chi.Router) {
+				r.Post("/", app.createCommentHandler)
+			})
+			r.Route("/{commentID}", func(r chi.Router) {
+				r.Use(app.commentContextMiddleware)
+
+				r.Patch("/", app.checkOwnership("moderator", "comment", app.updateCommentHandler))
+				r.Delete("/", app.checkOwnership("admin", "comment", app.deleteCommentHandler))
 			})
 		})
 

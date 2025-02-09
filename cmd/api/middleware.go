@@ -55,14 +55,22 @@ func (app *application) AuthTokenMiddleware(next http.Handler) http.Handler {
 }
 
 // Authorization
-func (app *application) checkPostOwnership(requiredRole string, next http.HandlerFunc) http.HandlerFunc {
+func (app *application) checkOwnership(requiredRole, intender string, next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := getUserFromContext(r)
-		post := getPostFromCtx(r)
 
-		if post.UserID == user.ID {
-			next.ServeHTTP(w, r)
-			return
+		if intender == "post" {
+			post := getPostFromCtx(r)
+			if post.UserID == user.ID {
+				next.ServeHTTP(w, r)
+				return
+			}
+		} else if intender == "comment" {
+			comment := getCommentFromCtx(r)
+			if comment.UserID == user.ID {
+				next.ServeHTTP(w, r)
+				return
+			}
 		}
 
 		allowed, err := app.checkRolePrecedence(r.Context(), user, requiredRole)
