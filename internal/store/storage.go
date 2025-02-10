@@ -32,6 +32,7 @@ type Storage struct {
 	Comment interface {
 		Create(context.Context, *Comment) error
 		GetByID(context.Context, int64) (*Comment, error)
+		GetByPostID(context.Context, int64) ([]PostComment, error)
 		Update(context.Context, int64, string) error
 		Delete(context.Context, int64) error
 		DeleteByPostID(context.Context, int64) error

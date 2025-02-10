@@ -18,6 +18,11 @@ type Comment struct {
 	CreatedAt string `json:"created_at"`
 }
 
+type PostComment struct {
+	Comment string `json:"comment"`
+	USerID  int64  `json:"user_id"`
+}
+
 func (s *CommentStore) Create(ctx context.Context, comment *Comment) error {
 	query := `
 		INSERT INTO comment (comment, user_id, post_id)
@@ -58,6 +63,37 @@ func (s *CommentStore) GetByID(ctx context.Context, id int64) (*Comment, error) 
 	}
 
 	return &comment, nil
+}
+
+func (s *CommentStore) GetByPostID(ctx context.Context, id int64) ([]PostComment, error) {
+	query_comment := `
+		SELECT comment, user_id
+		FROM comment
+		WHERE post_id = $1
+	`
+	var commentslice []PostComment
+	rows, err := s.db.QueryContext(ctx, query_comment, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, errors.New("ErrNotFound")
+		default:
+			return nil, err
+		}
+	}
+	for rows.Next() {
+		var comment PostComment
+		err = rows.Scan(
+			&comment.Comment,
+			&comment.USerID,
+		)
+		if err != nil {
+			return nil, err
+		}
+		commentslice = append(commentslice, comment)
+	}
+
+	return commentslice, nil
 }
 
 func (s *CommentStore) Update(ctx context.Context, commentid int64, comment string) error {

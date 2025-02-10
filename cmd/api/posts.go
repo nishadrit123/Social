@@ -53,12 +53,6 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
-	// postidstr := chi.URLParam(r, "postID")
-	// postid, err := strconv.ParseInt(postidstr, 10, 64)
-	// if err != nil {
-	// 	app.internalServerError(w, r, err)
-	// 	return
-	// }
 	ctxpost := getPostFromCtx(r)
 	post, err := app.store.Posts.GetByID(r.Context(), ctxpost.ID)
 	if err != nil {

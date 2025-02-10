@@ -111,6 +111,7 @@ func (app *application) mount() http.Handler {
 			r.Use(app.AuthTokenMiddleware)
 
 			r.Route("/post/{postID}", func(r chi.Router) {
+				r.Get("/", app.getCommentHandler)
 				r.Post("/", app.createCommentHandler)
 			})
 			r.Route("/{commentID}", func(r chi.Router) {
