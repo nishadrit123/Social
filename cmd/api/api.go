@@ -107,6 +107,14 @@ func (app *application) mount() http.Handler {
 			})
 		})
 
+		r.Route("/likedislike", func(r chi.Router) {
+			r.Use(app.AuthTokenMiddleware)
+			r.Route("/post/{postID}", func(r chi.Router) {
+				r.Use(app.postsContextMiddleware)
+				r.Post("/", app.likedislikeHandler)
+			})
+		})
+
 		r.Route("/comment", func(r chi.Router) {
 			r.Use(app.AuthTokenMiddleware)
 

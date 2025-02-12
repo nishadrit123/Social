@@ -37,9 +37,12 @@ type Storage struct {
 		Delete(context.Context, int64) error
 		DeleteByPostID(context.Context, int64) error
 	}
+	Like interface {
+		LikeDislike(context.Context, int64, int64) (bool, error)
+	}
 	Followers interface {
-		Follow(ctx context.Context, userID, followerID int64) error
-		Unfollow(ctx context.Context, followerID, userID int64) error
+		Follow(context.Context, int64, int64) error
+		Unfollow(context.Context, int64, int64) error
 	}
 	Roles interface {
 		GetByName(context.Context, string) (*Role, error)
@@ -51,6 +54,7 @@ func NewStorage(db *sql.DB) Storage {
 		Posts:     &PostStore{db},
 		Users:     &UserStore{db},
 		Comment:   &CommentStore{db},
+		Like:      &LikeStore{db},
 		Followers: &FollowerStore{db},
 		Roles:     &RoleStore{db},
 	}

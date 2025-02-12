@@ -98,7 +98,7 @@ func (app *application) checkRolePrecedence(ctx context.Context, user *store.Use
 }
 
 func (app *application) getUserFromRedisCache(ctx context.Context, userID int64) (*store.User, error) {
-	user, err := app.cacheStorage.Users.Get(ctx, userID)
+	user, err := app.cacheStorage.Users.Get(ctx, userID, "user")
 	if err != nil {
 		return nil, err
 	}
@@ -108,9 +108,9 @@ func (app *application) getUserFromRedisCache(ctx context.Context, userID int64)
 			return nil, err
 		}
 
-		if err := app.cacheStorage.Users.Set(ctx, user); err != nil {
+		if err := app.cacheStorage.Users.Set(ctx, user, 0, "user"); err != nil {
 			return nil, err
 		}
 	}
-	return user, nil
+	return user.(*store.User), nil
 }

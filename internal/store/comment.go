@@ -43,12 +43,13 @@ func (s *CommentStore) Create(ctx context.Context, comment *Comment) error {
 
 func (s *CommentStore) GetByID(ctx context.Context, id int64) (*Comment, error) {
 	query := `
-		SELECT comment, user_id, post_id
+		SELECT id, comment, user_id, post_id
 		FROM comment
 		WHERE id = $1
 	`
 	var comment Comment
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
+		&comment.ID,
 		&comment.Comment,
 		&comment.UserID,
 		&comment.PostID,

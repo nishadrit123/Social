@@ -28,8 +28,7 @@ func (app *application) commentContextMiddleware(next http.Handler) http.Handler
 		}
 
 		ctx := r.Context()
-
-		post, err := app.store.Comment.GetByID(ctx, id)
+		comment, err := app.store.Comment.GetByID(ctx, id)
 		if err != nil {
 			switch {
 			case errors.Is(err, store.ErrNotFound):
@@ -40,7 +39,7 @@ func (app *application) commentContextMiddleware(next http.Handler) http.Handler
 			return
 		}
 
-		ctx = context.WithValue(ctx, commentCtx, post)
+		ctx = context.WithValue(ctx, commentCtx, comment)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -66,9 +65,14 @@ func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	ctx := r.Context()
-	if err := app.store.Comment.Create(ctx, comment); err != nil {
+	err = app.store.Comment.Create(ctx, comment)
+	if err != nil {
 		app.internalServerError(w, r, err)
 		return
+	} else {
+		if err := app.cacheStorage.Users.Set(ctx, 0, postid, "comment"); err != nil {
+			app.logger.Error("Failed to set redis comment count Err: %v", err)
+		}
 	}
 }
 
@@ -96,32 +100,23 @@ func (app *application) updateCommentHandler(w http.ResponseWriter, r *http.Requ
 		app.badRequestResponse(w, r, err)
 		return
 	}
-	idParam := chi.URLParam(r, "commentID")
-	commentid, err := strconv.ParseInt(idParam, 10, 64)
-	if err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
-
-	ctx := r.Context()
-	if err := app.store.Comment.Update(ctx, commentid, payload.Comment); err != nil {
+	commentCtx := getCommentFromCtx(r)
+	if err := app.store.Comment.Update(r.Context(), commentCtx.ID, payload.Comment); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 }
 
 func (app *application) deleteCommentHandler(w http.ResponseWriter, r *http.Request) {
-	idParam := chi.URLParam(r, "commentID")
-	commentID, err := strconv.ParseInt(idParam, 10, 64)
+	commentCtx := getCommentFromCtx(r)
+	err := app.store.Comment.Delete(r.Context(), commentCtx.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
-	}
-
-	ctx := r.Context()
-	if err := app.store.Comment.Delete(ctx, commentID); err != nil {
-		app.internalServerError(w, r, err)
-		return
+	} else {
+		if err := app.cacheStorage.Users.UnSet(r.Context(), commentCtx.PostID, "comment"); err != nil {
+			app.logger.Error("Failed to unset redis comment count %v", err)
+		}
 	}
 }
 
