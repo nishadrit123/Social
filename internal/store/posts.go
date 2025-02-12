@@ -145,7 +145,7 @@ func (s *PostStore) GetUserFeed(ctx context.Context, userID int64, fq PaginatedF
 			u.username
 		FROM posts p
 		LEFT JOIN users u ON p.user_id = u.id
-		JOIN followers f ON f.follower_id = p.user_id OR p.user_id = $1
+		JOIN followers f ON f.following_id = p.user_id OR p.user_id = $1
 		WHERE 
 			f.user_id = $1 AND
 			(p.title ILIKE '%' || $4 || '%' OR p.content ILIKE '%' || $4 || '%') AND

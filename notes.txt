@@ -15,7 +15,6 @@ To push
 
 Pending
     Logout
-    Follower, following count and list 
     Send messages and post 
     concurrency handling 
 
@@ -25,7 +24,9 @@ Pending
     Stories 
     Jump to user profile from post 
     React to sent posts
+    posts of users and number of posts
     Modify redis handling (implemented over user interface, dont want that), Delete redis keys as required
+    Rely on DB in case of redis crash 
 
     UI and Sending emails to users registered
     Posts with photos and videos
