@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"social/internal/store"
@@ -11,22 +12,25 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+func (app *application) getJWTFromHeader(w http.ResponseWriter, r *http.Request) string {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		app.unauthorizedErrorResponse(w, r, fmt.Errorf("authorization header is missing"))
+		return ""
+	}
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		app.unauthorizedErrorResponse(w, r, fmt.Errorf("authorization header is malformed"))
+		return ""
+	}
+	token := parts[1]
+	return token
+}
+
 // Authentication
 func (app *application) AuthTokenMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			app.unauthorizedErrorResponse(w, r, fmt.Errorf("authorization header is missing"))
-			return
-		}
-
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			app.unauthorizedErrorResponse(w, r, fmt.Errorf("authorization header is malformed"))
-			return
-		}
-
-		token := parts[1]
+		token := app.getJWTFromHeader(w, r)
 		jwtToken, err := app.authenticator.ValidateToken(token)
 		if err != nil {
 			app.unauthorizedErrorResponse(w, r, err)
@@ -42,6 +46,13 @@ func (app *application) AuthTokenMiddleware(next http.Handler) http.Handler {
 		}
 
 		ctx := r.Context()
+
+		isLoggedIn, _ := app.cacheStorage.Users.Get(ctx, userID, token, "login")
+		if !isLoggedIn.(bool) {
+			err = errors.New("Invalid token")
+			app.unauthorizedErrorResponse(w, r, err)
+			return
+		}
 
 		user, err := app.getUserFromRedisCache(ctx, userID)
 		if err != nil {
@@ -98,7 +109,7 @@ func (app *application) checkRolePrecedence(ctx context.Context, user *store.Use
 }
 
 func (app *application) getUserFromRedisCache(ctx context.Context, userID int64) (*store.User, error) {
-	user, err := app.cacheStorage.Users.Get(ctx, userID, "user")
+	user, err := app.cacheStorage.Users.Get(ctx, userID, "", "user")
 	if err != nil {
 		return nil, err
 	}

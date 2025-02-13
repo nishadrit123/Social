@@ -15,7 +15,7 @@ func (app *application) likedislikeHandler(w http.ResponseWriter, r *http.Reques
 		if !exists {
 			app.cacheStorage.Users.Set(r.Context(), 0, postctx.ID, "like")
 		} else {
-			app.cacheStorage.Users.UnSet(r.Context(), postctx.ID, "like")
+			app.cacheStorage.Users.UnSet(r.Context(), postctx.ID, "", "like")
 		}
 	}
 }

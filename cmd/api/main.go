@@ -49,8 +49,8 @@ func main() {
 		auth: authConfig{
 			token: tokenConfig{
 				secret: env.GetString("AUTH_TOKEN_SECRET", "example"),
-				exp:    time.Hour * 24 * 3, // 3 days
-				iss:    "nishadsocial",     // jwt issuer
+				exp:    time.Hour * 24, // 1 day
+				iss:    "nishadsocial", // jwt issuer
 			},
 		},
 	}

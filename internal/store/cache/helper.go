@@ -17,8 +17,12 @@ type UserStore struct {
 
 const UserExpTime = time.Minute * 5
 
-func (s *UserStore) Get(ctx context.Context, key int64, keyType string) (any, error) {
-	var cacheKey string
+func (s *UserStore) Get(ctx context.Context, key int64, arrayVal string, keyType string) (any, error) {
+	var (
+		cacheKey string
+		data     any
+		err      error
+	)
 	if keyType == "user" {
 		cacheKey = fmt.Sprintf("user-%d", key)
 	} else if keyType == "comment" {
@@ -29,9 +33,14 @@ func (s *UserStore) Get(ctx context.Context, key int64, keyType string) (any, er
 		cacheKey = fmt.Sprintf("user-%d-following", key)
 	} else if keyType == "follower" {
 		cacheKey = fmt.Sprintf("user-%d-follower", key)
+	} else if keyType == "login" {
+		cacheKey = fmt.Sprintf("user-%d-login", key)
 	}
 
-	data, err := s.rdb.Get(ctx, cacheKey).Result()
+	if keyType == "login" {
+		return s.rdb.SIsMember(ctx, cacheKey, arrayVal).Val(), nil
+	}
+	data, err = s.rdb.Get(ctx, cacheKey).Result()
 	if err == redis.Nil {
 		return nil, nil
 	} else if err != nil {
@@ -41,7 +50,7 @@ func (s *UserStore) Get(ctx context.Context, key int64, keyType string) (any, er
 	if keyType == "user" {
 		var user store.User
 		if data != "" {
-			err := json.Unmarshal([]byte(data), &user)
+			err := json.Unmarshal([]byte(data.(string)), &user)
 			if err != nil {
 				return nil, err
 			}
@@ -74,11 +83,15 @@ func (s *UserStore) Set(ctx context.Context, value any, key int64, keyType strin
 	} else if keyType == "follower" {
 		cacheKey := fmt.Sprintf("user-%d-follower", key)
 		return s.rdb.Incr(ctx, cacheKey).Err()
+	} else if keyType == "login" {
+		cacheKey := fmt.Sprintf("user-%d-login", key)
+		s.rdb.SAdd(ctx, cacheKey, value)
+		return s.rdb.Expire(ctx, cacheKey, time.Hour*24).Err() // 1 day expiration same as jwt expiration
 	}
 	return nil
 }
 
-func (s *UserStore) UnSet(ctx context.Context, key int64, keyType string) error {
+func (s *UserStore) UnSet(ctx context.Context, key int64, arrayVal, keyType string) error {
 	if keyType == "comment" {
 		cacheKey := fmt.Sprintf("post-comment-%d", key)
 		return s.rdb.Decr(ctx, cacheKey).Err()
@@ -91,6 +104,9 @@ func (s *UserStore) UnSet(ctx context.Context, key int64, keyType string) error 
 	} else if keyType == "follower" {
 		cacheKey := fmt.Sprintf("user-%d-follower", key)
 		return s.rdb.Decr(ctx, cacheKey).Err()
+	} else if keyType == "login" {
+		cacheKey := fmt.Sprintf("user-%d-login", key)
+		return s.rdb.SRem(ctx, cacheKey, arrayVal).Err()
 	}
 	return nil
 }

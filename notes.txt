@@ -14,17 +14,15 @@ To push
     b. Enter something passphrase
 
 Pending
-    Logout
     Send messages and post 
     concurrency handling 
 
-    User profile 
-    Feed 
+    User profile: posts of users and number of posts
+    Jump to user profile from post
     Save posts 
     Stories 
-    Jump to user profile from post 
-    React to sent posts
-    posts of users and number of posts
+    Feed 
+    
     Modify redis handling (implemented over user interface, dont want that), Delete redis keys as required
     Rely on DB in case of redis crash 
 

@@ -136,11 +136,16 @@ func (app *application) mount() http.Handler {
 
 			r.Route("/{userID}", func(r chi.Router) {
 				r.Use(app.AuthTokenMiddleware)
-				// r.Use(app.usersContextMiddleware) no longer needed since this reads db twice
+				// r.Use(app.usersContextMiddleware)
 				r.Get("/", app.getUserHandler)
 				r.Put("/follow", app.followUserHandler)
 				r.Put("/unfollow", app.unfollowUserHandler)
 			})
+			r.Route("/logout", func(r chi.Router) {
+				r.Use(app.AuthTokenMiddleware)
+				r.Post("/", app.logoutUserHandler) // log out and inactivate user jwt toekn
+			})
+
 			r.Group(func(r chi.Router) {
 				r.Use(app.AuthTokenMiddleware)
 

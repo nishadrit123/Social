@@ -74,13 +74,13 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	userFollowing, err := app.cacheStorage.Users.Get(r.Context(), user.ID, "following")
+	userFollowing, err := app.cacheStorage.Users.Get(r.Context(), user.ID, "", "following")
 	if err != nil {
 		app.logger.Error("Unable to fetch comment count from redis, Err: %v", err)
 	} else {
 		user.FollowingCount = userFollowing
 	}
-	userFollower, err := app.cacheStorage.Users.Get(r.Context(), user.ID, "follower")
+	userFollower, err := app.cacheStorage.Users.Get(r.Context(), user.ID, "", "follower")
 	if err != nil {
 		app.logger.Error("Unable to fetch comment count from redis, Err: %v", err)
 	} else {
@@ -141,8 +141,8 @@ func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		app.internalServerError(w, r, err)
 	} else {
-		app.cacheStorage.Users.UnSet(ctx, followerUser.ID, "following")
-		app.cacheStorage.Users.UnSet(ctx, unfollowedID, "follower")
+		app.cacheStorage.Users.UnSet(ctx, followerUser.ID, "", "following")
+		app.cacheStorage.Users.UnSet(ctx, unfollowedID, "", "follower")
 	}
 }
 
@@ -197,4 +197,13 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 func getUserFromContext(r *http.Request) *store.User {
 	user, _ := r.Context().Value(userCtx).(*store.User)
 	return user
+}
+
+func (app *application) logoutUserHandler(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromContext(r)
+	token := app.getJWTFromHeader(w, r)
+	app.cacheStorage.Users.UnSet(r.Context(), user.ID, token, "login")
+	if err := app.jsonResponse(w, http.StatusOK, ""); err != nil {
+		app.internalServerError(w, r, err)
+	}
 }

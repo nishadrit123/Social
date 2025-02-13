@@ -144,6 +144,7 @@ func (app *application) createTokenHandler(w http.ResponseWriter, r *http.Reques
 		app.internalServerError(w, r, err)
 		return
 	}
+	app.cacheStorage.Users.Set(r.Context(), token, user.ID, "login")
 
 	if err := app.jsonResponse(w, http.StatusCreated, token); err != nil {
 		app.internalServerError(w, r, err)

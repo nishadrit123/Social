@@ -114,7 +114,7 @@ func (app *application) deleteCommentHandler(w http.ResponseWriter, r *http.Requ
 		app.internalServerError(w, r, err)
 		return
 	} else {
-		if err := app.cacheStorage.Users.UnSet(r.Context(), commentCtx.PostID, "comment"); err != nil {
+		if err := app.cacheStorage.Users.UnSet(r.Context(), commentCtx.PostID, "", "comment"); err != nil {
 			app.logger.Error("Failed to unset redis comment count %v", err)
 		}
 	}
