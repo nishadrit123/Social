@@ -4,6 +4,20 @@ import (
 	"net/http"
 )
 
+func (app *application) getUserslikeHandler(w http.ResponseWriter, r *http.Request) {
+	postctx := getPostFromCtx(r)
+	user_names, err := app.store.Like.GetUsersLike(r.Context(), postctx.ID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	} else {
+		if err := app.jsonResponse(w, http.StatusOK, user_names); err != nil {
+			app.internalServerError(w, r, err)
+			return
+		}
+	}
+}
+
 func (app *application) likedislikeHandler(w http.ResponseWriter, r *http.Request) {
 	postctx := getPostFromCtx(r)
 	userCtx := getUserFromContext(r)

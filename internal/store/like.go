@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
 )
 
 type LikeStore struct {
@@ -37,6 +38,38 @@ func (s *LikeStore) LikeDislike(ctx context.Context, postID int64, userID int64)
 		postID,
 	)
 	return exists, err
+}
+
+func (s *LikeStore) GetUsersLike(ctx context.Context, postID int64) ([]string, error) {
+	query := `
+		SELECT username
+		FROM users
+		JOIN liked 
+		ON users.id = liked.user_id
+		WHERE post_id = $1
+	`
+	var usernameslice []string
+	rows, err := s.db.QueryContext(ctx, query, postID)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, errors.New("ErrNotFound")
+		default:
+			return nil, err
+		}
+	}
+	for rows.Next() {
+		var username string
+		err = rows.Scan(
+			&username,
+		)
+		if err != nil {
+			return nil, err
+		}
+		usernameslice = append(usernameslice, username)
+	}
+
+	return usernameslice, nil
 }
 
 func (s *LikeStore) DeleteByPostID(ctx context.Context, postID int64) error {

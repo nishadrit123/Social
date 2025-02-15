@@ -113,6 +113,7 @@ func (app *application) mount() http.Handler {
 			r.Use(app.AuthTokenMiddleware)
 			r.Route("/post/{postID}", func(r chi.Router) {
 				r.Use(app.postsContextMiddleware)
+				r.Get("/", app.getUserslikeHandler)
 				r.Post("/", app.likedislikeHandler)
 			})
 		})

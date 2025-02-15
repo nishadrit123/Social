@@ -42,6 +42,7 @@ type Storage struct {
 	}
 	Like interface {
 		LikeDislike(context.Context, int64, int64) (bool, error)
+		GetUsersLike(context.Context, int64) ([]string, error)
 		DeleteByPostID(context.Context, int64) error
 	}
 	Followers interface {
