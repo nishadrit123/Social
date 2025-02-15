@@ -69,7 +69,7 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	likeCount, err := app.cacheStorage.Users.Get(r.Context(), post.ID, "", "like")
 	if err != nil {
-		app.logger.Error("Unable to fetch comment count from redis, Err: %v", err)
+		app.logger.Error("Unable to fetch like count from redis, Err: %v", err)
 	} else {
 		post.LikeCount = likeCount
 	}
@@ -89,6 +89,21 @@ func (app *application) getUserofPostHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err := app.jsonResponse(w, http.StatusOK, user); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) createSaveUnsavePostHandler(w http.ResponseWriter, r *http.Request) {
+	ctxuser := getUserFromContext(r)
+	ctxpost := getPostFromCtx(r)
+	_, err := app.store.Users.SaveUnsavePost(r.Context(), ctxuser.ID, ctxpost.ID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusOK, err); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

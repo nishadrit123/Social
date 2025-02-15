@@ -102,6 +102,7 @@ func (app *application) mount() http.Handler {
 				r.Use(app.postsContextMiddleware)
 				r.Get("/", app.getPostHandler)
 				r.Get("/user", app.getUserofPostHandler)
+				r.Post("/saveunsave", app.createSaveUnsavePostHandler)
 
 				r.Patch("/", app.checkOwnership("moderator", "post", app.updatePostHandler))
 				r.Delete("/", app.checkOwnership("admin", "post", app.deletePostHandler))
@@ -143,15 +144,13 @@ func (app *application) mount() http.Handler {
 				r.Put("/follow", app.followUserHandler)
 				r.Put("/unfollow", app.unfollowUserHandler)
 			})
-			r.Route("/logout", func(r chi.Router) {
-				r.Use(app.AuthTokenMiddleware)
-				r.Post("/", app.logoutUserHandler) // log out and inactivate user jwt toekn
-			})
 
 			r.Group(func(r chi.Router) {
 				r.Use(app.AuthTokenMiddleware)
 
 				r.Get("/feed", app.getUserFeedHandler)
+				r.Get("/savedpost", app.getSavedPostHandler)
+				r.Post("/logout", app.logoutUserHandler) // log out and inactivate user jwt token
 			})
 		})
 

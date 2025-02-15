@@ -328,3 +328,60 @@ func (s *UserStore) delete(ctx context.Context, tx *sql.Tx, id int64) error {
 
 	return nil
 }
+
+func (s *UserStore) SaveUnsavePost(ctx context.Context, userID int64, postID int64) (bool, error) {
+	var (
+		exists bool
+		query  string
+	)
+	err := s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM savedpost WHERE user_id = $1 AND savedpost_id = $2)", userID, postID).Scan(&exists)
+	if err != nil {
+		return exists, err
+	}
+
+	if !exists { // save the post
+		query = `
+			INSERT INTO savedpost (user_id, savedpost_id)
+			VALUES ($1, $2) 
+		`
+	} else { // unsave the post
+		query = `
+			DELETE FROM savedpost WHERE user_id = $1 AND savedpost_id = $2 
+		`
+	}
+
+	_, err = s.db.ExecContext(
+		ctx,
+		query,
+		userID,
+		postID,
+	)
+	return exists, err
+}
+
+func (s *UserStore) GetSavedPostsByUser(ctx context.Context, userID int64) ([]int64, error) {
+	query := `SELECT savedpost_id FROM savedpost WHERE user_id = $1`
+
+	var postIDSlice []int64
+	rows, err := s.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, errors.New("ErrNotFound")
+		default:
+			return nil, err
+		}
+	}
+	for rows.Next() {
+		var postID int64
+		err = rows.Scan(
+			&postID,
+		)
+		if err != nil {
+			return nil, err
+		}
+		postIDSlice = append(postIDSlice, postID)
+	}
+
+	return postIDSlice, nil
+}

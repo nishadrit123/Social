@@ -230,3 +230,25 @@ func (app *application) logoutUserHandler(w http.ResponseWriter, r *http.Request
 		app.internalServerError(w, r, err)
 	}
 }
+
+func (app *application) getSavedPostHandler(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromContext(r)
+	savedPostsIDS, err := app.store.Users.GetSavedPostsByUser(r.Context(), user.ID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	var savedPosts []store.Post
+	for _, savedPostsID := range savedPostsIDS {
+		savedPost, err := app.store.Posts.GetByID(r.Context(), savedPostsID)
+		if err != nil {
+			app.internalServerError(w, r, err)
+			return
+		}
+		savedPosts = append(savedPosts, *savedPost)
+	}
+	if err := app.jsonResponse(w, http.StatusOK, savedPosts); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}

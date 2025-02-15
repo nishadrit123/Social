@@ -17,7 +17,6 @@ Pending
     Send messages and post 
     concurrency handling 
 
-    Save posts 
     Stories 
     
     Modify redis handling (implemented over user interface, dont want that), Delete redis keys as required
