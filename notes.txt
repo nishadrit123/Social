@@ -17,13 +17,11 @@ Pending
     Send messages and post 
     concurrency handling 
 
-    Jump to user profile from post
     Save posts 
     Stories 
-    Feed 
     
     Modify redis handling (implemented over user interface, dont want that), Delete redis keys as required
-    Rely on DB in case of redis crash 
+    follower-following count visible for getUserHandler and not for getUserofPostHandler
+    Feed 
 
-    UI and Sending emails to users registered
-    Posts with photos and videos
+    UI and Sending emails to users registered, Posts with photos and videos
