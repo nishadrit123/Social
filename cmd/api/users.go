@@ -86,8 +86,31 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		user.FollowerCount = userFollower
 	}
+	userPostCount, err := app.cacheStorage.Users.Get(r.Context(), userID, "", "posts")
+	if err != nil {
+		app.logger.Error("Unable to fetch post count for user %v from redis, Err: %v", userID, err)
+	} else {
+		user.PostCount = userPostCount
+	}
 
 	if err := app.jsonResponse(w, http.StatusOK, user); err != nil {
+		app.internalServerError(w, r, err)
+	}
+}
+
+func (app *application) getUserAllPostsHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+	userPosts, err := app.store.Users.GetPostsByUser(r.Context(), userID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusOK, userPosts); err != nil {
 		app.internalServerError(w, r, err)
 	}
 }

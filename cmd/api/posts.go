@@ -45,6 +45,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		app.internalServerError(w, r, err)
 		return
 	}
+	app.cacheStorage.Users.Set(ctx, 0, user.ID, "posts")
 
 	if err := app.jsonResponse(w, http.StatusCreated, post); err != nil {
 		app.internalServerError(w, r, err)
@@ -88,6 +89,7 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	ctx := r.Context()
+	user := getUserFromContext(r)
 
 	if err := app.store.Posts.Delete(ctx, id); err != nil {
 		switch {
@@ -98,15 +100,13 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 		}
 		return
 	}
-	if err := app.store.Comment.DeleteByPostID(ctx, id); err != nil {
-		switch {
-		case errors.Is(err, store.ErrNotFound):
-			app.notFoundResponse(w, r, err)
-		default:
-			app.internalServerError(w, r, err)
-		}
-		return
-	}
+
+	app.store.Comment.DeleteByPostID(ctx, id)
+	app.store.Like.DeleteByPostID(ctx, id)
+
+	app.cacheStorage.Users.Delete(ctx, id, "comment")
+	app.cacheStorage.Users.Delete(ctx, id, "like")
+	app.cacheStorage.Users.UnSet(ctx, user.ID, "", "posts")
 
 	w.WriteHeader(http.StatusNoContent)
 }

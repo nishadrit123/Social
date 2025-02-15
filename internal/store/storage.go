@@ -24,6 +24,7 @@ type Storage struct {
 	Users interface {
 		Create(context.Context, *sql.Tx, *User) error
 		GetByID(context.Context, int64) (*User, error)
+		GetPostsByUser(context.Context, int64) ([]Post, error)
 		GetByEmail(context.Context, string) (*User, error)
 		CreateAndInvite(ctx context.Context, user *User, token string, exp time.Duration) error
 		Activate(context.Context, string) error
@@ -39,6 +40,7 @@ type Storage struct {
 	}
 	Like interface {
 		LikeDislike(context.Context, int64, int64) (bool, error)
+		DeleteByPostID(context.Context, int64) error
 	}
 	Followers interface {
 		Follow(context.Context, int64, int64) error

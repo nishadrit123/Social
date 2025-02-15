@@ -17,7 +17,6 @@ Pending
     Send messages and post 
     concurrency handling 
 
-    User profile: posts of users and number of posts
     Jump to user profile from post
     Save posts 
     Stories 

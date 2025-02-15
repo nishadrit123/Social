@@ -138,6 +138,7 @@ func (app *application) mount() http.Handler {
 				r.Use(app.AuthTokenMiddleware)
 				// r.Use(app.usersContextMiddleware)
 				r.Get("/", app.getUserHandler)
+				r.Get("/allposts", app.getUserAllPostsHandler)
 				r.Put("/follow", app.followUserHandler)
 				r.Put("/unfollow", app.unfollowUserHandler)
 			})

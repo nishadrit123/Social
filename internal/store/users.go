@@ -8,6 +8,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -122,6 +123,40 @@ func (s *UserStore) GetByID(ctx context.Context, userID int64) (*User, error) {
 	}
 
 	return user, nil
+}
+
+func (s *UserStore) GetPostsByUser(ctx context.Context, id int64) ([]Post, error) {
+	query := `
+		SELECT id, title, content, tags, updated_at
+		FROM posts
+		WHERE user_id = $1
+	`
+	var posts []Post
+	rows, err := s.db.QueryContext(ctx, query, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, errors.New("ErrNotFound")
+		default:
+			return nil, err
+		}
+	}
+	for rows.Next() {
+		var post Post
+		err = rows.Scan(
+			&post.ID,
+			&post.Title,
+			&post.Content,
+			pq.Array(&post.Tags),
+			&post.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	return posts, nil
 }
 
 func (s *UserStore) GetByEmail(ctx context.Context, email string) (*User, error) {

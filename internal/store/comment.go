@@ -127,10 +127,10 @@ func (s *CommentStore) Delete(ctx context.Context, commentID int64) error {
 	return nil
 }
 
-func (s *CommentStore) DeleteByPostID(ctx context.Context, commentID int64) error {
+func (s *CommentStore) DeleteByPostID(ctx context.Context, PostID int64) error {
 	query := `DELETE FROM comment WHERE post_id = $1`
 
-	res, err := s.db.ExecContext(ctx, query, commentID)
+	res, err := s.db.ExecContext(ctx, query, PostID)
 	if err != nil {
 		return err
 	}

@@ -38,3 +38,20 @@ func (s *LikeStore) LikeDislike(ctx context.Context, postID int64, userID int64)
 	)
 	return exists, err
 }
+
+func (s *LikeStore) DeleteByPostID(ctx context.Context, postID int64) error {
+	query := `DELETE FROM liked WHERE post_id = $1`
+
+	res, err := s.db.ExecContext(ctx, query, postID)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

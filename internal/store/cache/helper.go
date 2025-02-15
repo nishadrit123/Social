@@ -35,6 +35,8 @@ func (s *UserStore) Get(ctx context.Context, key int64, arrayVal string, keyType
 		cacheKey = fmt.Sprintf("user-%d-follower", key)
 	} else if keyType == "login" {
 		cacheKey = fmt.Sprintf("user-%d-login", key)
+	} else if keyType == "posts" {
+		cacheKey = fmt.Sprintf("user-%d-posts", key)
 	}
 
 	if keyType == "login" {
@@ -56,7 +58,7 @@ func (s *UserStore) Get(ctx context.Context, key int64, arrayVal string, keyType
 			}
 		}
 		return &user, nil
-	} else if keyType == "comment" || keyType == "like" || keyType == "following" || keyType == "follower" {
+	} else if keyType == "comment" || keyType == "like" || keyType == "following" || keyType == "follower" || keyType == "posts" {
 		return data, nil
 	}
 	return nil, nil
@@ -87,6 +89,9 @@ func (s *UserStore) Set(ctx context.Context, value any, key int64, keyType strin
 		cacheKey := fmt.Sprintf("user-%d-login", key)
 		s.rdb.SAdd(ctx, cacheKey, value)
 		return s.rdb.Expire(ctx, cacheKey, time.Hour*24).Err() // 1 day expiration same as jwt expiration
+	} else if keyType == "posts" {
+		cacheKey := fmt.Sprintf("user-%d-posts", key)
+		return s.rdb.Incr(ctx, cacheKey).Err()
 	}
 	return nil
 }
@@ -107,11 +112,27 @@ func (s *UserStore) UnSet(ctx context.Context, key int64, arrayVal, keyType stri
 	} else if keyType == "login" {
 		cacheKey := fmt.Sprintf("user-%d-login", key)
 		return s.rdb.SRem(ctx, cacheKey, arrayVal).Err()
+	} else if keyType == "posts" {
+		cacheKey := fmt.Sprintf("user-%d-posts", key)
+		return s.rdb.Decr(ctx, cacheKey).Err()
 	}
 	return nil
 }
 
-func (s *UserStore) Delete(ctx context.Context, userID int64) {
-	cacheKey := fmt.Sprintf("user-%d", userID)
+func (s *UserStore) Delete(ctx context.Context, key int64, keyType string) {
+	var cacheKey string
+	if keyType == "user" {
+		cacheKey = fmt.Sprintf("user-%d", key)
+	} else if keyType == "comment" {
+		cacheKey = fmt.Sprintf("post-comment-%d", key)
+	} else if keyType == "like" {
+		cacheKey = fmt.Sprintf("post-like-%d", key)
+	} else if keyType == "following" {
+		cacheKey = fmt.Sprintf("user-%d-following", key)
+	} else if keyType == "follower" {
+		cacheKey = fmt.Sprintf("user-%d-follower", key)
+	} else if keyType == "login" {
+		cacheKey = fmt.Sprintf("user-%d-login", key)
+	}
 	s.rdb.Del(ctx, cacheKey)
 }
