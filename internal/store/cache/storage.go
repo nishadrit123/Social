@@ -11,7 +11,7 @@ type Storage struct {
 		Get(context.Context, int64, string, string) (any, error)
 		Set(context.Context, any, int64, string) error
 		UnSet(context.Context, int64, string, string) error
-		Delete(context.Context, int64, string)
+		Delete(context.Context, any, string)
 	}
 }
 

@@ -82,6 +82,12 @@ func (app *application) checkOwnership(requiredRole, intender string, next http.
 				next.ServeHTTP(w, r)
 				return
 			}
+		} else if intender == "story" {
+			StoryUserID := getStoryUserIDFromCtx(r)
+			if StoryUserID == user.ID {
+				next.ServeHTTP(w, r)
+				return
+			}
 		}
 
 		allowed, err := app.checkRolePrecedence(r.Context(), user, requiredRole)

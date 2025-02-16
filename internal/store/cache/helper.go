@@ -15,8 +15,6 @@ type UserStore struct {
 	rdb *redis.Client
 }
 
-const UserExpTime = time.Minute * 5
-
 func (s *UserStore) Get(ctx context.Context, key int64, arrayVal string, keyType string) (any, error) {
 	var (
 		cacheKey string
@@ -37,10 +35,26 @@ func (s *UserStore) Get(ctx context.Context, key int64, arrayVal string, keyType
 		cacheKey = fmt.Sprintf("user-%d-login", key)
 	} else if keyType == "posts" {
 		cacheKey = fmt.Sprintf("user-%d-posts", key)
+	} else if keyType == "story" {
+		cacheKey = fmt.Sprintf("user-%d-story-*", key)
 	}
 
 	if keyType == "login" {
 		return s.rdb.SIsMember(ctx, cacheKey, arrayVal).Val(), nil
+	} else if keyType == "story" {
+		var (
+			stories []Story
+			story   Story
+		)
+		keys := s.rdb.Keys(ctx, cacheKey).Val()
+		for _, key := range keys {
+			story_str := s.rdb.Get(ctx, key).Val()
+			if err := json.Unmarshal([]byte(story_str), &story); err != nil {
+				return nil, err
+			}
+			stories = append(stories, story)
+		}
+		return stories, nil
 	}
 	data, err = s.rdb.Get(ctx, cacheKey).Result()
 	if err == redis.Nil {
@@ -92,6 +106,14 @@ func (s *UserStore) Set(ctx context.Context, value any, key int64, keyType strin
 	} else if keyType == "posts" {
 		cacheKey := fmt.Sprintf("user-%d-posts", key)
 		return s.rdb.Incr(ctx, cacheKey).Err()
+	} else if keyType == "story" {
+		uniqueTimeStamp := time.Now().Unix()
+		cacheKey := fmt.Sprintf("user-%d-story-%d", key, uniqueTimeStamp)
+		json, err := json.Marshal(value)
+		if err != nil {
+			return err
+		}
+		return s.rdb.SetEX(ctx, cacheKey, json, StoryExpTime).Err()
 	}
 	return nil
 }
@@ -119,7 +141,7 @@ func (s *UserStore) UnSet(ctx context.Context, key int64, arrayVal, keyType stri
 	return nil
 }
 
-func (s *UserStore) Delete(ctx context.Context, key int64, keyType string) {
+func (s *UserStore) Delete(ctx context.Context, key any, keyType string) {
 	var cacheKey string
 	if keyType == "user" {
 		cacheKey = fmt.Sprintf("user-%d", key)
@@ -133,6 +155,8 @@ func (s *UserStore) Delete(ctx context.Context, key int64, keyType string) {
 		cacheKey = fmt.Sprintf("user-%d-follower", key)
 	} else if keyType == "login" {
 		cacheKey = fmt.Sprintf("user-%d-login", key)
+	} else if keyType == "story" {
+		cacheKey = key.(string)
 	}
 	s.rdb.Del(ctx, cacheKey)
 }

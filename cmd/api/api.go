@@ -155,6 +155,18 @@ func (app *application) mount() http.Handler {
 			})
 		})
 
+		r.Route("/story", func(r chi.Router) {
+			r.Use(app.AuthTokenMiddleware)
+			r.Get("/get/{userID}", app.getStoryHandler)
+			r.Post("/", app.createStoryHandler)
+
+			r.Route("/{storyID}", func(r chi.Router) {
+				r.Use(app.storyContextMiddleware)
+
+				r.Delete("/", app.checkOwnership("admin", "story", app.deleteStoryHandler))
+			})
+		})
+
 		// public routes
 		r.Route("/authentication", func(r chi.Router) {
 			r.Post("/user", app.registerUserHandler) // registers the users and send them invites

@@ -16,11 +16,9 @@ To push
 Pending
     Send messages and post 
     concurrency handling 
-
-    Stories 
     
     Modify redis handling (implemented over user interface, dont want that), Delete redis keys as required
     follower-following count visible for getUserHandler and not for getUserofPostHandler
+    
     Feed 
-
     UI and Sending emails to users registered, Posts with photos and videos
