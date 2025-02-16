@@ -119,13 +119,13 @@ func (app *application) getUserFromRedisCache(ctx context.Context, userID int64)
 	if err != nil {
 		return nil, err
 	}
-	if user == nil {
+	if user == nil || user.(*store.User).ID == 0 {
 		user, err = app.store.Users.GetByID(ctx, userID)
 		if err != nil {
 			return nil, err
 		}
 
-		if err := app.cacheStorage.Users.Set(ctx, user, 0, "user"); err != nil {
+		if err := app.cacheStorage.Users.Set(ctx, user, userID, "user"); err != nil {
 			return nil, err
 		}
 	}
