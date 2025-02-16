@@ -13,12 +13,19 @@ To push
     a. Do git push origin master 
     b. Enter something passphrase
 
+Note
+    Get from redis is called at different places accross the app with common function in common.go
+        1. User for ( posts, followers, following count )
+            Get user, jump to user profile from a post
+        2. Post for ( likes and comment count )
+            Get post, feed, saved post, all posts of a user, sent post 
+
+
 Pending
     Send messages and post 
     concurrency handling 
     
-    Delete redis keys as required
-    follower-following count visible for getUserHandler and not for getUserofPostHandler
+    Delete redis keys when user is deleted
     
     Feed 
     UI and Sending emails to users registered, Posts with photos and videos

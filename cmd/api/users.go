@@ -74,24 +74,7 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	userFollowing, err := app.cacheStorage.Users.Get(r.Context(), user.ID, "", "following")
-	if err != nil {
-		app.logger.Error("Unable to fetch comment count from redis, Err: %v", err)
-	} else {
-		user.FollowingCount = userFollowing
-	}
-	userFollower, err := app.cacheStorage.Users.Get(r.Context(), user.ID, "", "follower")
-	if err != nil {
-		app.logger.Error("Unable to fetch comment count from redis, Err: %v", err)
-	} else {
-		user.FollowerCount = userFollower
-	}
-	userPostCount, err := app.cacheStorage.Users.Get(r.Context(), userID, "", "posts")
-	if err != nil {
-		app.logger.Error("Unable to fetch post count for user %v from redis, Err: %v", userID, err)
-	} else {
-		user.PostCount = userPostCount
-	}
+	app.GetPostsFollowersFollowingCountforUser(r, user)
 
 	if err := app.jsonResponse(w, http.StatusOK, user); err != nil {
 		app.internalServerError(w, r, err)
@@ -109,7 +92,9 @@ func (app *application) getUserAllPostsHandler(w http.ResponseWriter, r *http.Re
 		app.internalServerError(w, r, err)
 		return
 	}
-
+	for i := range userPosts {
+		app.GetLikeCommentCountforPost(r, &userPosts[i])
+	}
 	if err := app.jsonResponse(w, http.StatusOK, userPosts); err != nil {
 		app.internalServerError(w, r, err)
 	}
@@ -245,6 +230,7 @@ func (app *application) getSavedPostHandler(w http.ResponseWriter, r *http.Reque
 			app.internalServerError(w, r, err)
 			return
 		}
+		app.GetLikeCommentCountforPost(r, savedPost)
 		savedPosts = append(savedPosts, *savedPost)
 	}
 	if err := app.jsonResponse(w, http.StatusOK, savedPosts); err != nil {
