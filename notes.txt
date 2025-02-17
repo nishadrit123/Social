@@ -25,7 +25,5 @@ Pending
     Send messages and post 
     concurrency handling 
     
-    Delete redis keys when user is deleted
-    
     Feed 
     UI and Sending emails to users registered, Posts with photos and videos
