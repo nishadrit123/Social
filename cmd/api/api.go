@@ -5,6 +5,7 @@ import (
 	"social/internal/auth"
 	"social/internal/env"
 	"social/internal/mailer"
+	"social/internal/nats"
 	"social/internal/store"
 	"social/internal/store/cache"
 	"time"
@@ -24,6 +25,7 @@ type dbConfig struct {
 
 type config struct {
 	addr        string
+	natsaddr    string
 	db          dbConfig
 	redisCfg    redisConfig
 	env         string
@@ -68,6 +70,7 @@ type application struct {
 	config        config
 	store         store.Storage
 	cacheStorage  cache.Storage
+	nats          nats.Nats
 	logger        *zap.SugaredLogger
 	mailer        mailer.Client
 	authenticator auth.Authenticator

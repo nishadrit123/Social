@@ -5,6 +5,7 @@ import (
 	"social/internal/db"
 	"social/internal/env"
 	"social/internal/mailer"
+	"social/internal/nats"
 	"social/internal/store"
 	"social/internal/store/cache"
 	"time"
@@ -33,6 +34,7 @@ func main() {
 	}
 	cfg := &config{
 		addr:        env.GetString("ADDR", ":8080"),
+		natsaddr:    env.GetString("NATS_ADDR", "nats://localhost:4222"),
 		frontendURL: env.GetString("FRONTEND_URL", "http://localhost:5173"),
 		db: dbConfig{
 			addr:         env.GetString("DB_ADDR", "postgres://admin:adminpassword@localhost/socialnetwork?sslmode=disable"),
@@ -65,23 +67,28 @@ func main() {
 	if err != nil {
 		logger.Fatal(err)
 	}
-
 	mailtrap, err := mailer.NewMailTrapClient(cfg.mail.mailTrap.apiKey, cfg.mail.fromEmail)
 	if err != nil {
 		logger.Fatal(err)
 	}
-
 	defer db.Close()
 	logger.Info("database connection pool established")
 
 	// var rdb *redis.Client
 	rdb := cache.NewRedisClient(cfg.redisCfg.addr, cfg.redisCfg.pw, cfg.redisCfg.db)
 	logger.Info("redis cache connection established")
-
 	defer rdb.Close()
+
+	nc, err := nats.NewNatsClient(cfg.natsaddr)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	defer nc.Close()
+	logger.Info("NATS connection established!")
 
 	store := store.NewStorage(db)
 	cacheStorage := cache.NewRedisStorage(rdb) // redis
+	nats := nats.NewNatsConnection(nc)
 
 	jwtAuthenticator := auth.NewJWTAuthenticator(
 		cfg.auth.token.secret,
@@ -92,6 +99,7 @@ func main() {
 		config:        *cfg,
 		store:         store,
 		cacheStorage:  cacheStorage,
+		nats:          nats,
 		logger:        logger,
 		mailer:        mailtrap,
 		authenticator: jwtAuthenticator,

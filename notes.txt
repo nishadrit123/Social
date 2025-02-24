@@ -14,12 +14,17 @@ To push
     b. Enter something passphrase
 
 Note
-    Get from redis is called at different places accross the app with common function in common.go
+    a. Get from redis is called at different places accross the app with common function in common.go
         1. User for ( posts, followers, following count )
             Get user, jump to user profile from a post
         2. Post for ( likes and comment count )
             Get post, feed, saved post, all posts of a user, sent post 
 
+Nats
+    a. Pub-Sub
+        Notification, online/offline status, typing indicator in chat
+    b. Jetstream 
+        Chatting, sending posts 
 
 Pending
     Send messages and post 
