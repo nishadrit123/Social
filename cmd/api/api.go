@@ -24,12 +24,12 @@ type dbConfig struct {
 }
 
 type config struct {
-	addr        string
-	natsaddr    string
-	db          dbConfig
-	redisCfg    redisConfig
-	env         string
-	apiURL      string
+	addr     string
+	natsaddr string
+	db       dbConfig
+	redisCfg redisConfig
+	// env         string
+	// apiURL      string
 	mail        mailConfig
 	frontendURL string
 	auth        authConfig

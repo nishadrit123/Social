@@ -49,7 +49,7 @@ func (app *application) AuthTokenMiddleware(next http.Handler) http.Handler {
 
 		isLoggedIn, _ := app.cacheStorage.Users.Get(ctx, userID, token, "login")
 		if !isLoggedIn.(bool) {
-			err = errors.New("Invalid token")
+			err = errors.New("invalid token")
 			app.unauthorizedErrorResponse(w, r, err)
 			return
 		}
