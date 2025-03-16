@@ -160,6 +160,7 @@ func (app *application) mount() http.Handler {
 
 		r.Route("/story", func(r chi.Router) {
 			r.Use(app.AuthTokenMiddleware)
+
 			r.Get("/get/{userID}", app.getStoryHandler)
 			r.Post("/", app.createStoryHandler)
 
@@ -167,6 +168,15 @@ func (app *application) mount() http.Handler {
 				r.Use(app.storyContextMiddleware)
 
 				r.Delete("/", app.checkOwnership("admin", "story", app.deleteStoryHandler))
+			})
+		})
+
+		r.Route("/chat", func(r chi.Router) {
+			r.Use(app.AuthTokenMiddleware)
+
+			r.Route("/user/{userID}", func(r chi.Router) {
+				r.Get("/", app.getUserChat)
+				r.Post("/", app.postUserChat)
 			})
 		})
 
