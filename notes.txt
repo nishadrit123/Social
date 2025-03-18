@@ -31,4 +31,5 @@ Pending
     concurrency handling 
     
     Feed 
-    UI and Sending emails to users registered, Posts with photos and videos
+    Whom to send a post
+    UI and Sending emails to users registered

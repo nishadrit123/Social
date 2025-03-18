@@ -171,6 +171,13 @@ func (app *application) mount() http.Handler {
 			})
 		})
 
+		r.Route("/creategroup", func(r chi.Router) {
+			r.Use(app.AuthTokenMiddleware)
+
+			r.Post("/", app.createGroupHandler)
+			r.Put("/{groupID}", app.addGroupMembersHandler)
+		})
+
 		r.Route("/chat", func(r chi.Router) {
 			r.Use(app.AuthTokenMiddleware)
 

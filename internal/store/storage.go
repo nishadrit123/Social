@@ -52,6 +52,10 @@ type Storage struct {
 	Roles interface {
 		GetByName(context.Context, string) (*Role, error)
 	}
+	Group interface {
+		Create(context.Context, *Group) error
+		AddMembers(context.Context, int64, *Group) error
+	}
 }
 
 func NewStorage(db *sql.DB) Storage {
@@ -62,6 +66,7 @@ func NewStorage(db *sql.DB) Storage {
 		Like:      &LikeStore{db},
 		Followers: &FollowerStore{db},
 		Roles:     &RoleStore{db},
+		Group:     &GroupStore{db},
 	}
 }
 
