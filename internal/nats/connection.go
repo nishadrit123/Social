@@ -19,7 +19,7 @@ type NC struct {
 func (nc *NC) SendToChat(subject string, bytePayload []byte) error {
 	nc.js.CreateStream(context.Background(), jetstream.StreamConfig{
 		Name:     USER_CHAT_STREAM,
-		Subjects: []string{"chat.>"},
+		Subjects: []string{USER_SUBJECT_WILDCARD},
 		Storage:  0,
 	})
 
@@ -42,6 +42,7 @@ func (nc *NC) GetallChats(subject string) ([]chatPayload, error) {
 		return payloadSlice, err
 	}
 	for {
+		payload = chatPayload{}
 		msg, err := consumer.Next(jetstream.FetchMaxWait(100 * time.Millisecond))
 		if err != nil {
 			break
