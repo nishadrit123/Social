@@ -3,8 +3,12 @@ package nats
 import "time"
 
 const (
-	USER_CHAT_STREAM      = "USER_CHAT_STREAM"
-	USER_SUBJECT_WILDCARD = "chat.>"
+	USER_CHAT_STREAM       = "USER_CHAT_STREAM"
+	GROUP_CHAT_STREAM      = "GROUP_CHAT_STREAM"
+	USER_CHAT_CONSUMER     = "USER_CHAT_CONSUMER"
+	GROUP_CHAT_CONSUMER    = "GROUP_CHAT_CONSUMER"
+	USER_SUBJECT_WILDCARD  = "chat.user.>"
+	GROUP_SUBJECT_WILDCARD = "chat.group.>"
 )
 
 type Post struct {

@@ -55,6 +55,8 @@ type Storage struct {
 	Group interface {
 		Create(context.Context, *Group) error
 		AddMembers(context.Context, int64, *Group) error
+		IsUserInGroup(context.Context, int64, int64) (bool, error)
+		GetGroupMembers(context.Context, int64) ([]int64, error)
 	}
 }
 

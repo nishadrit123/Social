@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -18,9 +19,20 @@ type chatPayload struct {
 	Date       time.Time `json:"date,omitempty"`
 }
 
-func (app *application) postUserChat(w http.ResponseWriter, r *http.Request) {
-	var subject string
-	idParam := chi.URLParam(r, "userID")
+func (app *application) postChat(w http.ResponseWriter, r *http.Request) {
+	var (
+		subject string
+		idParam string
+		is_user bool
+	)
+	if strings.Contains(r.URL.String(), "user") {
+		is_user = true
+	}
+	if is_user {
+		idParam = chi.URLParam(r, "userID")
+	} else {
+		idParam = chi.URLParam(r, "groupID")
+	}
 	receiverID, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
 		app.internalServerError(w, r, err)
@@ -28,6 +40,7 @@ func (app *application) postUserChat(w http.ResponseWriter, r *http.Request) {
 	}
 	sender := getUserFromContext(r)
 	senderID := sender.ID
+
 	var payload chatPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
@@ -46,12 +59,24 @@ func (app *application) postUserChat(w http.ResponseWriter, r *http.Request) {
 		app.logger.Errorf("Error marshalling chat payload, Err: %v", err)
 	}
 
-	if senderID < receiverID {
-		subject = fmt.Sprintf("chat.%v.%v", senderID, receiverID)
+	if is_user {
+		if senderID < receiverID {
+			subject = fmt.Sprintf("chat.user.%v.%v", senderID, receiverID)
+		} else {
+			subject = fmt.Sprintf("chat.user.%v.%v", receiverID, senderID)
+		}
 	} else {
-		subject = fmt.Sprintf("chat.%v.%v", receiverID, senderID)
+		isMember, err := app.store.Group.IsUserInGroup(r.Context(), receiverID, senderID)
+		if !isMember || err != nil {
+			if err := app.jsonResponse(w, http.StatusUnauthorized, err); err != nil {
+				app.unauthorizedErrorResponse(w, r, err)
+				return
+			}
+			return
+		}
+		subject = fmt.Sprintf("chat.group.%v", receiverID)
 	}
-	err = app.nats.NatsConn.SendToChat(subject, bytePayload)
+	err = app.nats.NatsConn.SendToChat(subject, bytePayload, is_user)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -60,7 +85,7 @@ func (app *application) postUserChat(w http.ResponseWriter, r *http.Request) {
 	// since a text message is being sent, all the previous chats/posts are supposed to be displayed unlike in
 	// case of sending a post where no previous chats/posts are supposed to be displayed
 	if payload.Text != "" {
-		app.FetchAllChats(w, r, subject)
+		app.FetchAllChats(w, r, subject, is_user)
 		return
 	}
 
@@ -70,9 +95,20 @@ func (app *application) postUserChat(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) getUserChat(w http.ResponseWriter, r *http.Request) {
-	var subject string
-	idParam := chi.URLParam(r, "userID")
+func (app *application) getChat(w http.ResponseWriter, r *http.Request) {
+	var (
+		subject string
+		idParam string
+		is_user bool
+	)
+	if strings.Contains(r.URL.String(), "user") {
+		is_user = true
+	}
+	if is_user {
+		idParam = chi.URLParam(r, "userID")
+	} else {
+		idParam = chi.URLParam(r, "groupID")
+	}
 	otherID, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
 		app.internalServerError(w, r, err)
@@ -81,17 +117,29 @@ func (app *application) getUserChat(w http.ResponseWriter, r *http.Request) {
 	loggedInUser := getUserFromContext(r)
 	loggedInUserID := loggedInUser.ID
 
-	if loggedInUserID < otherID {
-		subject = fmt.Sprintf("chat.%v.%v", loggedInUserID, otherID)
+	if is_user {
+		if loggedInUserID < otherID {
+			subject = fmt.Sprintf("chat.user.%v.%v", loggedInUserID, otherID)
+		} else {
+			subject = fmt.Sprintf("chat.user.%v.%v", otherID, loggedInUserID)
+		}
 	} else {
-		subject = fmt.Sprintf("chat.%v.%v", otherID, loggedInUserID)
+		isMember, err := app.store.Group.IsUserInGroup(r.Context(), otherID, loggedInUserID)
+		if !isMember || err != nil {
+			if err := app.jsonResponse(w, http.StatusUnauthorized, err); err != nil {
+				app.unauthorizedErrorResponse(w, r, err)
+				return
+			}
+			return
+		}
+		subject = fmt.Sprintf("chat.group.%v", otherID)
 	}
 
-	app.FetchAllChats(w, r, subject)
+	app.FetchAllChats(w, r, subject, is_user)
 }
 
-func (app *application) FetchAllChats(w http.ResponseWriter, r *http.Request, subject string) {
-	allChats, err := app.nats.NatsConn.GetallChats(subject)
+func (app *application) FetchAllChats(w http.ResponseWriter, r *http.Request, subject string, is_user bool) {
+	allChats, err := app.nats.NatsConn.GetallChats(subject, is_user)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

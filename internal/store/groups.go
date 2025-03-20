@@ -46,3 +46,35 @@ func (s *GroupStore) AddMembers(ctx context.Context, grpID int64, grp *Group) er
 	_, err := s.db.ExecContext(ctx, query, grpID, pq.Array(grp.Members))
 	return err
 }
+
+func (s *GroupStore) IsUserInGroup(ctx context.Context, groupID, userID int64) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM groups 
+			WHERE id = $1 
+			AND ($2 = created_by OR $2 = ANY(members))
+		);
+	`
+	var exists bool
+	err := s.db.QueryRowContext(ctx, query, groupID, userID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (s *GroupStore) GetGroupMembers(ctx context.Context, groupID int64) ([]int64, error) {
+	query := `
+		SELECT created_by, members FROM groups WHERE id = $1;
+	`
+
+	var createdBy int64
+	var members []int64
+
+	err := s.db.QueryRowContext(ctx, query, groupID).Scan(&createdBy, pq.Array(&members))
+	if err != nil {
+		return nil, err
+	}
+	members = append(members, createdBy)
+	return members, nil
+}

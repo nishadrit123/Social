@@ -9,8 +9,8 @@ import (
 
 type Nats struct {
 	NatsConn interface {
-		SendToChat(string, []byte) error
-		GetallChats(string) ([]chatPayload, error)
+		SendToChat(string, []byte, bool) error
+		GetallChats(string, bool) ([]chatPayload, error)
 	}
 }
 

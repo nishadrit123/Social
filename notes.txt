@@ -31,5 +31,6 @@ Pending
     concurrency handling 
     
     Feed 
-    Whom to send a post
+    Whom to send a Post
+    Chat page 
     UI and Sending emails to users registered

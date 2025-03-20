@@ -171,19 +171,24 @@ func (app *application) mount() http.Handler {
 			})
 		})
 
-		r.Route("/creategroup", func(r chi.Router) {
+		r.Route("/group", func(r chi.Router) {
 			r.Use(app.AuthTokenMiddleware)
 
-			r.Post("/", app.createGroupHandler)
-			r.Put("/{groupID}", app.addGroupMembersHandler)
+			r.Post("/create", app.createGroupHandler)
+			r.Put("/addmembers/{groupID}", app.addGroupMembersHandler)
+			r.Get("/info/{groupID}", app.getGroupMembers)
 		})
 
 		r.Route("/chat", func(r chi.Router) {
 			r.Use(app.AuthTokenMiddleware)
 
 			r.Route("/user/{userID}", func(r chi.Router) {
-				r.Get("/", app.getUserChat)
-				r.Post("/", app.postUserChat)
+				r.Get("/", app.getChat)
+				r.Post("/", app.postChat)
+			})
+			r.Route("/group/{groupID}", func(r chi.Router) {
+				r.Get("/", app.getChat)
+				r.Post("/", app.postChat)
 			})
 		})
 

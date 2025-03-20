@@ -70,3 +70,35 @@ func (app *application) addGroupMembersHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 }
+
+func (app *application) getGroupMembers(w http.ResponseWriter, r *http.Request) {
+	var (
+		member      *store.User
+		memberSlice []store.User
+		userSlice   []int64
+	)
+	idParam := chi.URLParam(r, "groupID")
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	userSlice, err = app.store.Group.GetGroupMembers(r.Context(), id)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	for _, userID := range userSlice {
+		member, err = app.store.Users.GetByID(r.Context(), userID)
+		if err != nil {
+			app.logger.Errorf("Error while fetching member %v from group %v, Err: %v", userID, id, err)
+			continue
+		}
+		memberSlice = append(memberSlice, *member)
+	}
+
+	if err := app.jsonResponse(w, http.StatusOK, memberSlice); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
