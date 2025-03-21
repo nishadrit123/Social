@@ -13,6 +13,12 @@ type groupMembersPayload struct {
 	Members []int64 `json:"members"`
 }
 
+type groupInfoPayload struct {
+	Name    string       `json:"name,omitempty"`
+	Admin   *store.User  `json:"admin"`
+	Members []store.User `json:"members"`
+}
+
 func (app *application) createGroupHandler(w http.ResponseWriter, r *http.Request) {
 	var payload groupMembersPayload
 	if err := readJSON(w, r, &payload); err != nil {
@@ -71,11 +77,10 @@ func (app *application) addGroupMembersHandler(w http.ResponseWriter, r *http.Re
 	}
 }
 
-func (app *application) getGroupMembers(w http.ResponseWriter, r *http.Request) {
+func (app *application) getGroupInfo(w http.ResponseWriter, r *http.Request) {
 	var (
-		member      *store.User
-		memberSlice []store.User
-		userSlice   []int64
+		member    *store.User
+		groupInfo groupInfoPayload
 	)
 	idParam := chi.URLParam(r, "groupID")
 	id, err := strconv.ParseInt(idParam, 10, 64)
@@ -83,21 +88,38 @@ func (app *application) getGroupMembers(w http.ResponseWriter, r *http.Request) 
 		app.internalServerError(w, r, err)
 		return
 	}
-	userSlice, err = app.store.Group.GetGroupMembers(r.Context(), id)
+
+	user := getUserFromContext(r)
+	isMember, err := app.store.Group.IsUserInGroup(r.Context(), id, user.ID)
+	if !isMember || err != nil {
+		if err := app.jsonResponse(w, http.StatusUnauthorized, err); err != nil {
+			app.unauthorizedErrorResponse(w, r, err)
+			return
+		}
+		return
+	}
+
+	grpInfo, err := app.store.Group.GetGroupInfo(r.Context(), id)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
-	for _, userID := range userSlice {
+	groupInfo.Name = grpInfo.Name
+	admin, err := app.store.Users.GetByID(r.Context(), grpInfo.CreatedBy)
+	if err != nil {
+		app.logger.Errorf("Error while fetching admin %v from group %v, Err: %v", grpInfo.CreatedBy, id, err)
+	}
+	groupInfo.Admin = admin
+	for _, userID := range grpInfo.Members {
 		member, err = app.store.Users.GetByID(r.Context(), userID)
 		if err != nil {
 			app.logger.Errorf("Error while fetching member %v from group %v, Err: %v", userID, id, err)
 			continue
 		}
-		memberSlice = append(memberSlice, *member)
+		groupInfo.Members = append(groupInfo.Members, *member)
 	}
 
-	if err := app.jsonResponse(w, http.StatusOK, memberSlice); err != nil {
+	if err := app.jsonResponse(w, http.StatusOK, groupInfo); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

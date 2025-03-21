@@ -145,6 +145,9 @@ func (app *application) mount() http.Handler {
 				// r.Use(app.usersContextMiddleware)
 				r.Get("/", app.getUserHandler)
 				r.Get("/allposts", app.getUserAllPostsHandler)
+				r.Get("/allfollowers", app.getUserAllFollowersHandler)
+				r.Get("/allfollowings", app.getUserAllFollowingsHandler)
+				r.Get("/allgroups", app.getUserAllGroupsHandler)
 				r.Put("/follow", app.followUserHandler)
 				r.Put("/unfollow", app.unfollowUserHandler)
 			})
@@ -176,7 +179,7 @@ func (app *application) mount() http.Handler {
 
 			r.Post("/create", app.createGroupHandler)
 			r.Put("/addmembers/{groupID}", app.addGroupMembersHandler)
-			r.Get("/info/{groupID}", app.getGroupMembers)
+			r.Get("/info/{groupID}", app.getGroupInfo)
 		})
 
 		r.Route("/chat", func(r chi.Router) {

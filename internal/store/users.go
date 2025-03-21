@@ -385,3 +385,47 @@ func (s *UserStore) GetSavedPostsByUser(ctx context.Context, userID int64) ([]in
 
 	return postIDSlice, nil
 }
+
+func (s *UserStore) GetFollowers(ctx context.Context, userID int64) ([]int64, error) {
+	query := `
+		SELECT user_id FROM followers WHERE following_id = $1;
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var followers []int64
+	for rows.Next() {
+		var followerID int64
+		if err := rows.Scan(&followerID); err != nil {
+			return nil, err
+		}
+		followers = append(followers, followerID)
+	}
+	return followers, nil
+}
+
+func (s *UserStore) GetFollowings(ctx context.Context, userID int64) ([]int64, error) {
+	query := `
+		SELECT following_id FROM followers WHERE user_id = $1;
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var followings []int64
+	for rows.Next() {
+		var followerID int64
+		if err := rows.Scan(&followerID); err != nil {
+			return nil, err
+		}
+		followings = append(followings, followerID)
+	}
+	return followings, nil
+}

@@ -63,18 +63,44 @@ func (s *GroupStore) IsUserInGroup(ctx context.Context, groupID, userID int64) (
 	return exists, nil
 }
 
-func (s *GroupStore) GetGroupMembers(ctx context.Context, groupID int64) ([]int64, error) {
+func (s *GroupStore) GetGroupInfo(ctx context.Context, groupID int64) (*Group, error) {
 	query := `
-		SELECT created_by, members FROM groups WHERE id = $1;
+		SELECT name, created_by, members FROM groups WHERE id = $1;
 	`
 
-	var createdBy int64
-	var members []int64
+	var group Group
 
-	err := s.db.QueryRowContext(ctx, query, groupID).Scan(&createdBy, pq.Array(&members))
+	err := s.db.QueryRowContext(ctx, query, groupID).Scan(
+		&group.Name,
+		&group.CreatedBy,
+		pq.Array(&group.Members),
+	)
 	if err != nil {
 		return nil, err
 	}
-	members = append(members, createdBy)
-	return members, nil
+	return &group, nil
+}
+
+func (s *GroupStore) GetGroupsForUser(ctx context.Context, userID int64) ([]int64, error) {
+	query := `
+		SELECT id FROM groups 
+		WHERE ($1 = created_by OR $1 = ANY(members));
+	`
+
+	var groupIDs []int64
+	rows, err := s.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var groupID int64
+		if err := rows.Scan(&groupID); err != nil {
+			return nil, err
+		}
+		groupIDs = append(groupIDs, groupID)
+	}
+	return groupIDs, nil
 }

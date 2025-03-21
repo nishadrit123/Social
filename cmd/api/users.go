@@ -24,6 +24,16 @@ type CreateFollowerPayload struct {
 	UserId int64 `json:"user_id"`
 }
 
+type compactUserPayload struct {
+	UserId   int64  `json:"user_id"`
+	Username string `json:"username"`
+}
+
+type compactGroupPayload struct {
+	GroupId   int64  `json:"group_id"`
+	Groupname string `json:"groupname"`
+}
+
 // This function will no longer used, it was just created to test if user add works
 func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	var (
@@ -206,11 +216,62 @@ func getUserFromContext(r *http.Request) *store.User {
 	return user
 }
 
-func (app *application) logoutUserHandler(w http.ResponseWriter, r *http.Request) {
-	user := getUserFromContext(r)
-	token := app.getJWTFromHeader(w, r)
-	app.cacheStorage.Users.UnSet(r.Context(), user.ID, token, "login")
-	if err := app.jsonResponse(w, http.StatusOK, ""); err != nil {
+func (app *application) getUserAllFollowersHandler(w http.ResponseWriter, r *http.Request) {
+	var followers []compactUserPayload
+	idParam := chi.URLParam(r, "userID")
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	followerIDs, err := app.store.Users.GetFollowers(r.Context(), id)
+	if err != nil {
+		if err := app.jsonResponse(w, http.StatusInternalServerError, err); err != nil {
+			app.internalServerError(w, r, err)
+		}
+	}
+	for _, followerID := range followerIDs {
+		var followerInfo compactUserPayload
+		follower, err := app.store.Users.GetByID(r.Context(), followerID)
+		if err != nil {
+			app.logger.Error("Error fetching user %v, Err: %v", followerID, err)
+			continue
+		}
+		followerInfo.UserId = follower.ID
+		followerInfo.Username = follower.Username
+		followers = append(followers, followerInfo)
+	}
+	if err := app.jsonResponse(w, http.StatusOK, followers); err != nil {
+		app.internalServerError(w, r, err)
+	}
+}
+
+func (app *application) getUserAllFollowingsHandler(w http.ResponseWriter, r *http.Request) {
+	var followings []compactUserPayload
+	idParam := chi.URLParam(r, "userID")
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	followingIDs, err := app.store.Users.GetFollowings(r.Context(), id)
+	if err != nil {
+		if err := app.jsonResponse(w, http.StatusInternalServerError, err); err != nil {
+			app.internalServerError(w, r, err)
+		}
+	}
+	for _, followingID := range followingIDs {
+		var followingInfo compactUserPayload
+		following, err := app.store.Users.GetByID(r.Context(), followingID)
+		if err != nil {
+			app.logger.Error("Error fetching user %v, Err: %v", followingID, err)
+			continue
+		}
+		followingInfo.UserId = following.ID
+		followingInfo.Username = following.Username
+		followings = append(followings, followingInfo)
+	}
+	if err := app.jsonResponse(w, http.StatusOK, followings); err != nil {
 		app.internalServerError(w, r, err)
 	}
 }
@@ -219,8 +280,9 @@ func (app *application) getSavedPostHandler(w http.ResponseWriter, r *http.Reque
 	user := getUserFromContext(r)
 	savedPostsIDS, err := app.store.Users.GetSavedPostsByUser(r.Context(), user.ID)
 	if err != nil {
-		app.internalServerError(w, r, err)
-		return
+		if err := app.jsonResponse(w, http.StatusInternalServerError, err); err != nil {
+			app.internalServerError(w, r, err)
+		}
 	}
 	var savedPosts []store.Post
 	for _, savedPostsID := range savedPostsIDS {
@@ -235,5 +297,45 @@ func (app *application) getSavedPostHandler(w http.ResponseWriter, r *http.Reque
 	if err := app.jsonResponse(w, http.StatusOK, savedPosts); err != nil {
 		app.internalServerError(w, r, err)
 		return
+	}
+}
+
+func (app *application) getUserAllGroupsHandler(w http.ResponseWriter, r *http.Request) {
+	var groups []compactGroupPayload
+	idParam := chi.URLParam(r, "userID")
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	groupIDs, err := app.store.Group.GetGroupsForUser(r.Context(), id)
+	if err != nil {
+		if err := app.jsonResponse(w, http.StatusInternalServerError, err); err != nil {
+			app.internalServerError(w, r, err)
+		}
+	}
+	for _, groupID := range groupIDs {
+		var groupInfo compactGroupPayload
+		group, err := app.store.Group.GetGroupInfo(r.Context(), groupID)
+		if err != nil {
+			app.logger.Error("Error fetching group info for group %v, Err: %v", groupID, err)
+			continue
+		}
+		groupInfo.GroupId = groupID
+		groupInfo.Groupname = group.Name
+		groups = append(groups, groupInfo)
+	}
+	if err := app.jsonResponse(w, http.StatusOK, groups); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) logoutUserHandler(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromContext(r)
+	token := app.getJWTFromHeader(w, r)
+	app.cacheStorage.Users.UnSet(r.Context(), user.ID, token, "login")
+	if err := app.jsonResponse(w, http.StatusOK, ""); err != nil {
+		app.internalServerError(w, r, err)
 	}
 }

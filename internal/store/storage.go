@@ -31,6 +31,8 @@ type Storage struct {
 		Delete(context.Context, int64) error
 		SaveUnsavePost(context.Context, int64, int64) (bool, error)
 		GetSavedPostsByUser(context.Context, int64) ([]int64, error)
+		GetFollowers(context.Context, int64) ([]int64, error)
+		GetFollowings(context.Context, int64) ([]int64, error)
 	}
 	Comment interface {
 		Create(context.Context, *Comment) error
@@ -56,7 +58,8 @@ type Storage struct {
 		Create(context.Context, *Group) error
 		AddMembers(context.Context, int64, *Group) error
 		IsUserInGroup(context.Context, int64, int64) (bool, error)
-		GetGroupMembers(context.Context, int64) ([]int64, error)
+		GetGroupInfo(context.Context, int64) (*Group, error)
+		GetGroupsForUser(context.Context, int64) ([]int64, error)
 	}
 }
 
