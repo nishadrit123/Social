@@ -24,14 +24,9 @@ type CreateFollowerPayload struct {
 	UserId int64 `json:"user_id"`
 }
 
-type compactUserPayload struct {
-	UserId   int64  `json:"user_id"`
-	Username string `json:"username"`
-}
-
-type compactGroupPayload struct {
-	GroupId   int64  `json:"group_id"`
-	Groupname string `json:"groupname"`
+type compactUserGrpPayload struct {
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 // This function will no longer used, it was just created to test if user add works
@@ -217,62 +212,45 @@ func getUserFromContext(r *http.Request) *store.User {
 }
 
 func (app *application) getUserAllFollowersHandler(w http.ResponseWriter, r *http.Request) {
-	var followers []compactUserPayload
+	var followers []compactUserGrpPayload
 	idParam := chi.URLParam(r, "userID")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
-	followerIDs, err := app.store.Users.GetFollowers(r.Context(), id)
-	if err != nil {
-		if err := app.jsonResponse(w, http.StatusInternalServerError, err); err != nil {
-			app.internalServerError(w, r, err)
-		}
-	}
-	for _, followerID := range followerIDs {
-		var followerInfo compactUserPayload
-		follower, err := app.store.Users.GetByID(r.Context(), followerID)
-		if err != nil {
-			app.logger.Error("Error fetching user %v, Err: %v", followerID, err)
-			continue
-		}
-		followerInfo.UserId = follower.ID
-		followerInfo.Username = follower.Username
-		followers = append(followers, followerInfo)
-	}
+	followers, _ = app.AllFollowers(w, r, id)
 	if err := app.jsonResponse(w, http.StatusOK, followers); err != nil {
 		app.internalServerError(w, r, err)
 	}
 }
 
 func (app *application) getUserAllFollowingsHandler(w http.ResponseWriter, r *http.Request) {
-	var followings []compactUserPayload
+	var followings []compactUserGrpPayload
 	idParam := chi.URLParam(r, "userID")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
-	followingIDs, err := app.store.Users.GetFollowings(r.Context(), id)
-	if err != nil {
-		if err := app.jsonResponse(w, http.StatusInternalServerError, err); err != nil {
-			app.internalServerError(w, r, err)
-		}
-	}
-	for _, followingID := range followingIDs {
-		var followingInfo compactUserPayload
-		following, err := app.store.Users.GetByID(r.Context(), followingID)
-		if err != nil {
-			app.logger.Error("Error fetching user %v, Err: %v", followingID, err)
-			continue
-		}
-		followingInfo.UserId = following.ID
-		followingInfo.Username = following.Username
-		followings = append(followings, followingInfo)
-	}
+	followings, _ = app.AllFollowings(w, r, id)
 	if err := app.jsonResponse(w, http.StatusOK, followings); err != nil {
 		app.internalServerError(w, r, err)
+	}
+}
+
+func (app *application) getUserAllGroupsHandler(w http.ResponseWriter, r *http.Request) {
+	var groups []compactUserGrpPayload
+	idParam := chi.URLParam(r, "userID")
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	groups, _ = app.AllGroups(w, r, id)
+	if err := app.jsonResponse(w, http.StatusOK, groups); err != nil {
+		app.internalServerError(w, r, err)
+		return
 	}
 }
 
@@ -295,37 +273,6 @@ func (app *application) getSavedPostHandler(w http.ResponseWriter, r *http.Reque
 		savedPosts = append(savedPosts, *savedPost)
 	}
 	if err := app.jsonResponse(w, http.StatusOK, savedPosts); err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
-}
-
-func (app *application) getUserAllGroupsHandler(w http.ResponseWriter, r *http.Request) {
-	var groups []compactGroupPayload
-	idParam := chi.URLParam(r, "userID")
-	id, err := strconv.ParseInt(idParam, 10, 64)
-	if err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
-	groupIDs, err := app.store.Group.GetGroupsForUser(r.Context(), id)
-	if err != nil {
-		if err := app.jsonResponse(w, http.StatusInternalServerError, err); err != nil {
-			app.internalServerError(w, r, err)
-		}
-	}
-	for _, groupID := range groupIDs {
-		var groupInfo compactGroupPayload
-		group, err := app.store.Group.GetGroupInfo(r.Context(), groupID)
-		if err != nil {
-			app.logger.Error("Error fetching group info for group %v, Err: %v", groupID, err)
-			continue
-		}
-		groupInfo.GroupId = groupID
-		groupInfo.Groupname = group.Name
-		groups = append(groups, groupInfo)
-	}
-	if err := app.jsonResponse(w, http.StatusOK, groups); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

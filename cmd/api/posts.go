@@ -98,6 +98,30 @@ func (app *application) createSaveUnsavePostHandler(w http.ResponseWriter, r *ht
 	}
 }
 
+func (app *application) getSendPostHandler(w http.ResponseWriter, r *http.Request) {
+	var sendTo [][]compactUserGrpPayload
+	ctxuser := getUserFromContext(r)
+
+	followers, _ := app.AllFollowers(w, r, ctxuser.ID)
+	followings, _ := app.AllFollowings(w, r, ctxuser.ID)
+	groups, _ := app.AllGroups(w, r, ctxuser.ID)
+
+	if len(followers) > 0 {
+		sendTo = append(sendTo, followers)
+	}
+	if len(followings) > 0 {
+		sendTo = append(sendTo, followings)
+	}
+	if len(groups) > 0 {
+		sendTo = append(sendTo, groups)
+	}
+
+	if err := app.jsonResponse(w, http.StatusOK, sendTo); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
 func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "postID")
 	id, err := strconv.ParseInt(idParam, 10, 64)

@@ -105,6 +105,7 @@ func (app *application) mount() http.Handler {
 				r.Use(app.postsContextMiddleware)
 				r.Get("/", app.getPostHandler)
 				r.Get("/user", app.getUserofPostHandler)
+				r.Get("/sendto", app.getSendPostHandler)
 				r.Post("/saveunsave", app.createSaveUnsavePostHandler)
 
 				r.Patch("/", app.checkOwnership("moderator", "post", app.updatePostHandler))
