@@ -74,7 +74,7 @@ func (app *application) postChat(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-		subject = fmt.Sprintf("chat.group.%v", receiverID)
+		subject = fmt.Sprintf("chat.group.%v.%v", senderID, receiverID) // senderID -> groupID
 	}
 	err = app.nats.NatsConn.SendToChat(subject, bytePayload, is_user)
 	if err != nil {
@@ -85,6 +85,9 @@ func (app *application) postChat(w http.ResponseWriter, r *http.Request) {
 	// since a text message is being sent, all the previous chats/posts are supposed to be displayed unlike in
 	// case of sending a post where no previous chats/posts are supposed to be displayed
 	if payload.Text != "" {
+		if !is_user {
+			subject = fmt.Sprintf("chat.group.*.%v", receiverID)
+		}
 		app.FetchAllChats(w, r, subject, is_user)
 		return
 	}
@@ -132,7 +135,7 @@ func (app *application) getChat(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-		subject = fmt.Sprintf("chat.group.%v", otherID)
+		subject = fmt.Sprintf("chat.group.*.%v", otherID) // senderID -> groupID
 	}
 
 	app.FetchAllChats(w, r, subject, is_user)
@@ -162,6 +165,46 @@ func (app *application) FetchAllChats(w http.ResponseWriter, r *http.Request, su
 		}
 	}
 	if err := app.jsonResponse(w, http.StatusOK, allChats); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) openChatWindow(w http.ResponseWriter, r *http.Request) {
+	var (
+		subjectSlice []string
+		allChats     [][]int64 // [[usr]]
+		chatsPayload []compactUserGrpPayload
+	)
+	user := getUserFromContext(r)
+
+	userSubject1 := fmt.Sprintf("chat.user.%v.*", user.ID)
+	userSubject2 := fmt.Sprintf("chat.user.*.%v", user.ID)
+	grpSubject := fmt.Sprintf("chat.group.%v.*", user.ID)
+	subjectSlice = append(subjectSlice, userSubject1)
+	subjectSlice = append(subjectSlice, userSubject2)
+	subjectSlice = append(subjectSlice, grpSubject)
+
+	allChats = app.nats.NatsConn.OpenChats(subjectSlice, user.ID)
+	for _, userID := range allChats[0] {
+		var chatPayload compactUserGrpPayload
+		user, err := app.store.Users.GetByID(r.Context(), userID)
+		if err != nil {
+			app.internalServerError(w, r, err)
+			continue
+		}
+		chatPayload.Id = user.ID
+		chatPayload.Name = user.Username
+		chatsPayload = append(chatsPayload, chatPayload)
+	}
+	groups, err := app.AllGroups(w, r, user.ID)
+	if err != nil {
+		app.logger.Errorf("Error fetching groups for user %v, Err: %v\n", user.ID, err)
+	} else {
+		chatsPayload = append(chatsPayload, groups...)
+	}
+
+	if err := app.jsonResponse(w, http.StatusOK, chatsPayload); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

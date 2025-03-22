@@ -186,6 +186,7 @@ func (app *application) mount() http.Handler {
 		r.Route("/chat", func(r chi.Router) {
 			r.Use(app.AuthTokenMiddleware)
 
+			r.Get("/chatwindow", app.openChatWindow)
 			r.Route("/user/{userID}", func(r chi.Router) {
 				r.Get("/", app.getChat)
 				r.Post("/", app.postChat)

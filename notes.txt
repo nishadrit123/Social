@@ -19,6 +19,8 @@ Note
             Get user, jump to user profile from a post
         2. Post for ( likes and comment count )
             Get post, feed, saved post, all posts of a user, sent post 
+    b. Get compact info related to users and groups, a given user is following, a follower and a part of using 
+       common functions defined in common.go
 
 Nats
     a. Pub-Sub
@@ -31,6 +33,5 @@ Pending
     concurrency handling 
     
     Feed 
-    Whom to send a Post
-    Chat page 
+    search box
     UI and Sending emails to users registered

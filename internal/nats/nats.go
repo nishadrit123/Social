@@ -11,6 +11,7 @@ type Nats struct {
 	NatsConn interface {
 		SendToChat(string, []byte, bool) error
 		GetallChats(string, bool) ([]chatPayload, error)
+		OpenChats([]string, int64) [][]int64
 	}
 }
 
