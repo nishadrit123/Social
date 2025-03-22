@@ -32,6 +32,5 @@ Pending
     Send messages and post 
     concurrency handling 
     
-    Feed 
-    search box
+    Feed
     UI and Sending emails to users registered

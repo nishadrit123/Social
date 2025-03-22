@@ -33,6 +33,7 @@ type Storage struct {
 		GetSavedPostsByUser(context.Context, int64) ([]int64, error)
 		GetFollowers(context.Context, int64) ([]int64, error)
 		GetFollowings(context.Context, int64) ([]int64, error)
+		GetByWildCard(context.Context, string) ([]compactUserPayload, error)
 	}
 	Comment interface {
 		Create(context.Context, *Comment) error

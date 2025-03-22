@@ -29,6 +29,10 @@ type compactUserGrpPayload struct {
 	Name string `json:"name"`
 }
 
+type searchPayload struct {
+	Name string `json:"name"`
+}
+
 // This function will no longer used, it was just created to test if user add works
 func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	var (
@@ -273,6 +277,26 @@ func (app *application) getSavedPostHandler(w http.ResponseWriter, r *http.Reque
 		savedPosts = append(savedPosts, *savedPost)
 	}
 	if err := app.jsonResponse(w, http.StatusOK, savedPosts); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) searchHandler(w http.ResponseWriter, r *http.Request) {
+	var (
+		payload searchPayload
+	)
+	if err := readJSON(w, r, &payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	searchFor := "%" + payload.Name + "%"
+	searchResult, err := app.store.Users.GetByWildCard(r.Context(), searchFor)
+	if err != nil {
+		app.internalServerError(w, r, err)
+	}
+	if err := app.jsonResponse(w, http.StatusOK, searchResult); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

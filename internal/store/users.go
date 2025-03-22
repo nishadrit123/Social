@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/lib/pq"
@@ -33,6 +34,11 @@ type User struct {
 	PostCount      any      `json:"post_count"`
 	FollowerCount  any      `json:"follower_count"`
 	FollowingCount any      `json:"following_count"`
+}
+
+type compactUserPayload struct {
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 type password struct {
@@ -428,4 +434,30 @@ func (s *UserStore) GetFollowings(ctx context.Context, userID int64) ([]int64, e
 		followings = append(followings, followerID)
 	}
 	return followings, nil
+}
+
+func (s *UserStore) GetByWildCard(ctx context.Context, name string) ([]compactUserPayload, error) {
+	query := `
+		SELECT id, username FROM users WHERE username ILIKE $1;
+	`
+
+	var (
+		user  compactUserPayload
+		users []compactUserPayload
+	)
+	rows, err := s.db.QueryContext(ctx, query, name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := rows.Scan(&user.Id, &user.Name); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	fmt.Printf("users %v\n", users)
+	fmt.Printf("name %v\n", name)
+	return users, nil
 }

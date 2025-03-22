@@ -158,6 +158,7 @@ func (app *application) mount() http.Handler {
 
 				r.Get("/feed", app.getUserFeedHandler)
 				r.Get("/savedpost", app.getSavedPostHandler)
+				r.Get("/search", app.searchHandler)
 				r.Post("/logout", app.logoutUserHandler) // log out and inactivate user jwt token
 			})
 		})
