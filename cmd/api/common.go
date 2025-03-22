@@ -41,6 +41,21 @@ func (app *application) GetLikeCommentCountforPost(r *http.Request, post *store.
 	}
 }
 
+func (app *application) GetLikeCommentCountforPostwithMetadata(r *http.Request, post *store.PostWithMetadata) {
+	commentCount, err := app.cacheStorage.Users.Get(r.Context(), post.ID, "", "comment")
+	if err != nil {
+		app.logger.Error("Unable to fetch comment count from redis, Err: %v", err)
+	} else {
+		post.CommentCount = commentCount
+	}
+	likeCount, err := app.cacheStorage.Users.Get(r.Context(), post.ID, "", "like")
+	if err != nil {
+		app.logger.Error("Unable to fetch like count from redis, Err: %v", err)
+	} else {
+		post.LikeCount = likeCount
+	}
+}
+
 func (app *application) AllFollowers(w http.ResponseWriter, r *http.Request, id int64) ([]compactUserGrpPayload, error) {
 	var followers []compactUserGrpPayload
 	followerIDs, err := app.store.Users.GetFollowers(r.Context(), id)

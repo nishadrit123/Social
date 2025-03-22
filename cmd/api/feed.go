@@ -24,7 +24,10 @@ func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	// user := getUserFromContext(r)
 
-	feed, err := app.store.Posts.GetUserFeed(ctx, 3, fq)
+	feed, err := app.store.Posts.GetUserFeed(ctx, fq)
+	for i := range feed {
+		app.GetLikeCommentCountforPostwithMetadata(r, &feed[i])
+	}
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

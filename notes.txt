@@ -29,8 +29,5 @@ Nats
         Chatting, sending posts 
 
 Pending
-    Send messages and post 
     concurrency handling 
-    
-    Feed
-    UI and Sending emails to users registered
+    Sending emails to users registered
