@@ -31,3 +31,4 @@ Nats
 Pending
     concurrency handling 
     Sending emails to users registered
+    Loading... on home page 
