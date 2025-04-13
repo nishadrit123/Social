@@ -55,7 +55,8 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 
 func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	ctxpost := getPostFromCtx(r)
-	post, err := app.store.Posts.GetByID(r.Context(), ctxpost.ID)
+	user := getUserFromContext(r)
+	post, err := app.store.Posts.GetByID(r.Context(), ctxpost.ID, user.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -195,8 +196,9 @@ func (app *application) postsContextMiddleware(next http.Handler) http.Handler {
 		}
 
 		ctx := r.Context()
+		user := getUserFromContext(r)
 
-		post, err := app.store.Posts.GetByID(ctx, id)
+		post, err := app.store.Posts.GetByID(ctx, id, user.ID)
 		if err != nil {
 			switch {
 			case errors.Is(err, store.ErrNotFound):

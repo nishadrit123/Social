@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/lib/pq"
@@ -132,10 +131,22 @@ func (s *UserStore) GetByID(ctx context.Context, userID int64) (*User, error) {
 }
 
 func (s *UserStore) GetPostsByUser(ctx context.Context, id int64) ([]Post, error) {
+	// query := `
+	// 	SELECT id, title, content, tags, updated_at
+	// 	FROM posts
+	// 	WHERE user_id = $1
+	// `
 	query := `
-		SELECT id, title, content, tags, updated_at
-		FROM posts
-		WHERE user_id = $1
+		SELECT p.id, p.user_id, u.username, p.title, p.content, p.created_at,  p.updated_at, p.tags,
+		EXISTS (
+        	SELECT 1 FROM liked l WHERE l.post_id = p.id AND l.user_id = $1
+    	) as is_liked,
+    	EXISTS (
+        	SELECT 1 FROM savedpost s WHERE s.savedpost_id = p.id AND s.user_id = $1
+    	) as is_saved
+		FROM posts as p LEFT JOIN users AS u
+		ON p.user_id = u.id
+		WHERE u.id = $1
 	`
 	var posts []Post
 	rows, err := s.db.QueryContext(ctx, query, id)
@@ -151,10 +162,15 @@ func (s *UserStore) GetPostsByUser(ctx context.Context, id int64) ([]Post, error
 		var post Post
 		err = rows.Scan(
 			&post.ID,
+			&post.UserID,
+			&post.User.Username,
 			&post.Title,
 			&post.Content,
-			pq.Array(&post.Tags),
+			&post.CreatedAt,
 			&post.UpdatedAt,
+			pq.Array(&post.Tags),
+			&post.IsPostLiked,
+			&post.IsPostSaved,
 		)
 		if err != nil {
 			return nil, err
@@ -457,7 +473,5 @@ func (s *UserStore) GetByWildCard(ctx context.Context, name string) ([]compactUs
 		}
 		users = append(users, user)
 	}
-	fmt.Printf("users %v\n", users)
-	fmt.Printf("name %v\n", name)
 	return users, nil
 }

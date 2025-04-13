@@ -1,31 +1,42 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
+import PostCard from "../components/PostCard";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
+  const [userPosts, setUserPosts] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchUserData = async () => {
       try {
         const token = localStorage.getItem("jwtToken");
         const decoded = jwtDecode(token);
         const loggedInUserId = decoded.sub;
 
-        const response = await axios.get(
-          `http://localhost:8080/v1/users/${loggedInUserId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setUser(response.data.data);
+        const [userRes, postsRes] = await Promise.all([
+          axios.get(`http://localhost:8080/v1/users/${loggedInUserId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(
+            `http://localhost:8080/v1/users/${loggedInUserId}/allposts`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          ),
+        ]);
+
+        setUser(userRes.data.data);
+        setUserPosts(postsRes.data.data || []);
       } catch (error) {
-        console.error("Error fetching user profile:", error);
+        console.error("Error fetching profile data:", error);
       }
     };
 
-    fetchUserProfile();
+    fetchUserData();
   }, []);
 
   if (!user) {
@@ -34,6 +45,7 @@ const Profile = () => {
 
   return (
     <div className="container mt-4">
+      {/* Top Half: Profile Info */}
       <h2 className="text-center mb-4">Profile</h2>
       <div className="card mx-auto mb-4" style={{ maxWidth: "600px" }}>
         <div className="card-body">
@@ -53,9 +65,28 @@ const Profile = () => {
               <p>{user.following_count || 0}</p>
             </div>
           </div>
-          <button className="btn btn-primary w-100 mt-3" onClick={() => navigate("/saved-posts")}>Saved Posts</button>
+          <button
+            className="btn btn-primary w-100 mt-3"
+            onClick={() => navigate("/saved-posts")}
+          >
+            Saved Posts
+          </button>
         </div>
       </div>
+
+      {/* Bottom Half: User's Own Posts */}
+      <h4 className="text-center mb-3">Your Posts</h4>
+      {userPosts.length === 0 ? (
+        <p className="text-center text-muted">You haven't posted anything yet.</p>
+      ) : (
+        <div className="row">
+          {userPosts.map((post) => (
+            <div className="col-md-4" key={post.id}>
+              <PostCard post={post} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

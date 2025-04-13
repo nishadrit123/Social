@@ -147,9 +147,10 @@ func (app *application) FetchAllChats(w http.ResponseWriter, r *http.Request, su
 		app.internalServerError(w, r, err)
 		return
 	}
+	user := getUserFromContext(r)
 	for i := range allChats {
 		if allChats[i].PostID != 0 {
-			post, err := app.store.Posts.GetByID(r.Context(), allChats[i].PostID)
+			post, err := app.store.Posts.GetByID(r.Context(), allChats[i].PostID, user.ID)
 			if err != nil {
 				app.logger.Errorf("Error fetching post by id for chats, Err: %v", err)
 			}

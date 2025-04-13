@@ -23,6 +23,8 @@ type Post struct {
 	User         User     `json:"user"`
 	LikeCount    any      `json:"like_count"`
 	CommentCount any      `json:"comment_count"`
+	IsPostSaved  bool     `json:"is_post_saved,omitempty"`
+	IsPostLiked  bool     `json:"is_post_liked,omitempty"`
 }
 
 type PostWithMetadata struct {
@@ -50,9 +52,15 @@ func (s *PostStore) Create(ctx context.Context, post *Post) error {
 	return err
 }
 
-func (s *PostStore) GetByID(ctx context.Context, id int64) (*Post, error) {
+func (s *PostStore) GetByID(ctx context.Context, postID, userID int64) (*Post, error) {
 	query := `
-		SELECT p.id, p.user_id, u.username, p.title, p.content, p.created_at,  p.updated_at, p.tags
+		SELECT p.id, p.user_id, u.username, p.title, p.content, p.created_at,  p.updated_at, p.tags,
+		EXISTS (
+        	SELECT 1 FROM liked l WHERE l.post_id = p.id AND l.user_id = $2
+    	) as is_liked,
+    	EXISTS (
+        	SELECT 1 FROM savedpost s WHERE s.savedpost_id = p.id AND s.user_id = $2
+    	) as is_saved
 		FROM posts as p LEFT JOIN users AS u
 		ON p.user_id = u.id
 		WHERE p.id = $1
@@ -61,7 +69,7 @@ func (s *PostStore) GetByID(ctx context.Context, id int64) (*Post, error) {
 	// ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	// defer cancel()
 	var post Post
-	err := s.db.QueryRowContext(ctx, query, id).Scan(
+	err := s.db.QueryRowContext(ctx, query, postID, userID).Scan(
 		&post.ID,
 		&post.UserID,
 		&post.User.Username,
@@ -70,6 +78,8 @@ func (s *PostStore) GetByID(ctx context.Context, id int64) (*Post, error) {
 		&post.CreatedAt,
 		&post.UpdatedAt,
 		pq.Array(&post.Tags),
+		&post.IsPostLiked,
+		&post.IsPostSaved,
 	)
 	if err != nil {
 		switch {
@@ -140,9 +150,15 @@ func (s *PostStore) Update(ctx context.Context, post *Post) error {
 	return nil
 }
 
-func (s *PostStore) GetUserFeed(ctx context.Context, fq PaginatedFeedQuery) ([]PostWithMetadata, error) {
+func (s *PostStore) GetUserFeed(ctx context.Context, fq PaginatedFeedQuery, userID int64) ([]PostWithMetadata, error) {
 	query := `
-		SELECT p.id, p.user_id, p.title, p.content, p.created_at, p.tags, u.username
+		SELECT p.id, p.user_id, p.title, p.content, p.created_at, p.tags, u.username,
+		EXISTS (
+        	SELECT 1 FROM liked l WHERE l.post_id = p.id AND l.user_id = $1
+    	) as is_liked,
+    	EXISTS (
+        	SELECT 1 FROM savedpost s WHERE s.savedpost_id = p.id AND s.user_id = $1
+    	) as is_saved
 		FROM posts as p LEFT JOIN users as u on p.user_id = u.id
 	`
 	// query := `
@@ -156,7 +172,7 @@ func (s *PostStore) GetUserFeed(ctx context.Context, fq PaginatedFeedQuery) ([]P
 	defer cancel()
 
 	// rows, err := s.db.QueryContext(ctx, query, fq.Limit, fq.Offset, fq.Search, pq.Array(fq.Tags))
-	rows, err := s.db.QueryContext(ctx, query)
+	rows, err := s.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -174,6 +190,8 @@ func (s *PostStore) GetUserFeed(ctx context.Context, fq PaginatedFeedQuery) ([]P
 			&p.CreatedAt,
 			pq.Array(&p.Tags),
 			&p.User.Username,
+			&p.IsPostLiked,
+			&p.IsPostSaved,
 		)
 		if err != nil {
 			return nil, err

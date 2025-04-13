@@ -22,9 +22,10 @@ func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	ctx := r.Context()
+	user := getUserFromContext(r)
 	// user := getUserFromContext(r)
 
-	feed, err := app.store.Posts.GetUserFeed(ctx, fq)
+	feed, err := app.store.Posts.GetUserFeed(ctx, fq, user.ID)
 	for i := range feed {
 		app.GetLikeCommentCountforPostwithMetadata(r, &feed[i])
 	}
