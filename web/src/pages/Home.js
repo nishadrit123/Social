@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FiUser, FiLogOut } from "react-icons/fi";
+import { FiUser, FiLogOut, FiSearch } from "react-icons/fi";
 import PostCard from "../components/PostCard";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -13,9 +13,12 @@ const Home = () => {
     const fetchPosts = async () => {
       try {
         const token = localStorage.getItem("jwtToken");
-        const response = await axios.get("http://localhost:8080/v1/users/feed", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await axios.get(
+          "http://localhost:8080/v1/users/feed",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         setPosts(response.data.data || []);
       } catch (error) {
@@ -29,9 +32,13 @@ const Home = () => {
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("jwtToken");
-      await axios.post("http://localhost:8080/v1/users/logout", {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.post(
+        "http://localhost:8080/v1/users/logout",
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       localStorage.removeItem("jwtToken");
       navigate("/login");
@@ -50,6 +57,13 @@ const Home = () => {
           onClick={() => navigate("/profile")}
         />
 
+        <FiSearch
+          size={24}
+          style={{ cursor: "pointer" }}
+          className="text-secondary"
+          onClick={() => navigate("/search")}
+        />
+
         <FiLogOut
           size={24}
           style={{ cursor: "pointer" }}
@@ -57,8 +71,8 @@ const Home = () => {
           onClick={handleLogout}
         />
       </div>
-
-      <h2 className="text-center mb-4">User Feed</h2>
+      
+      <br />
 
       <div className="row">
         {posts.map((post) => (

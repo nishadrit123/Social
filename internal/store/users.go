@@ -22,22 +22,23 @@ type UserStore struct {
 }
 
 type User struct {
-	ID             int64    `json:"id"`
-	Username       string   `json:"username"`
-	Email          string   `json:"email"`
-	Password       password `json:"-"`
-	CreatedAt      string   `json:"created_at"`
-	IsActive       bool     `json:"is_active"`
-	RoleID         int64    `json:"role_id"`
-	Role           Role     `json:"role"`
-	PostCount      any      `json:"post_count"`
-	FollowerCount  any      `json:"follower_count"`
-	FollowingCount any      `json:"following_count"`
+	ID                 int64    `json:"id"`
+	Username           string   `json:"username"`
+	Email              string   `json:"email"`
+	Password           password `json:"-"`
+	CreatedAt          string   `json:"created_at"`
+	IsActive           bool     `json:"is_active"`
+	RoleID             int64    `json:"role_id"`
+	Role               Role     `json:"role"`
+	PostCount          any      `json:"post_count"`
+	FollowerCount      any      `json:"follower_count"`
+	FollowingCount     any      `json:"following_count"`
+	IsAlreadyFollowing bool     `json:"is_already_following"`
 }
 
 type compactUserPayload struct {
-	Id   int64  `json:"id"`
-	Name string `json:"name"`
+	Id   int64  `json:"userid"`
+	Name string `json:"username"`
 }
 
 type password struct {
@@ -91,14 +92,14 @@ func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 	return nil
 }
 
-func (s *UserStore) GetByID(ctx context.Context, userID int64) (*User, error) {
+func (s *UserStore) GetByID(ctx context.Context, userID, loggedInUserID int64) (*User, error) {
 	query := `
-		SELECT users.id, username, email, password, created_at, roles.*
+		SELECT users.id, username, email, password, created_at, roles.*,
+		EXISTS (SELECT 1 from followers where user_id = $2 and following_id = $1) as is_already_following
 		FROM users
 		JOIN roles ON (users.role_id = roles.id)
 		WHERE users.id = $1 AND is_active = true
 	`
-
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
@@ -107,6 +108,7 @@ func (s *UserStore) GetByID(ctx context.Context, userID int64) (*User, error) {
 		ctx,
 		query,
 		userID,
+		loggedInUserID,
 	).Scan(
 		&user.ID,
 		&user.Username,
@@ -117,6 +119,7 @@ func (s *UserStore) GetByID(ctx context.Context, userID int64) (*User, error) {
 		&user.Role.Name,
 		&user.Role.Level,
 		&user.Role.Description,
+		&user.IsAlreadyFollowing,
 	)
 	if err != nil {
 		switch err {

@@ -189,7 +189,7 @@ func (app *application) openChatWindow(w http.ResponseWriter, r *http.Request) {
 	allChats = app.nats.NatsConn.OpenChats(subjectSlice, user.ID)
 	for _, userID := range allChats[0] {
 		var chatPayload compactUserGrpPayload
-		user, err := app.store.Users.GetByID(r.Context(), userID)
+		user, err := app.store.Users.GetByID(r.Context(), userID, user.ID)
 		if err != nil {
 			app.internalServerError(w, r, err)
 			continue

@@ -84,7 +84,8 @@ func (app *application) getCommentHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 	ctx := r.Context()
-	commentslice, err := app.store.Comment.GetByPostID(ctx, postid)
+	user := getUserFromContext(r)
+	commentslice, err := app.store.Comment.GetByPostID(ctx, postid, user.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

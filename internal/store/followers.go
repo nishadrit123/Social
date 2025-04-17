@@ -17,25 +17,30 @@ type FollowerStore struct {
 	db *sql.DB
 }
 
-func (s *FollowerStore) Follow(ctx context.Context, followingID, userID int64) error {
+type DisplayButton struct {
+	DB bool `json:"display_button"`
+}
+
+func (s *FollowerStore) Follow(ctx context.Context, followingID, userID int64) (DisplayButton, error) {
 	query := `
 		INSERT INTO followers (user_id, following_id) VALUES ($1, $2)
 	`
 
+	db := DisplayButton{}
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
 	_, err := s.db.ExecContext(ctx, query, userID, followingID)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
-			return ErrConflict
+			return db, ErrConflict
 		}
 	}
-
-	return nil
+	db.DB = true
+	return db, nil
 }
 
-func (s *FollowerStore) Unfollow(ctx context.Context, followingID, userID int64) error {
+func (s *FollowerStore) Unfollow(ctx context.Context, followingID, userID int64) (DisplayButton, error) {
 	query := `
 		DELETE FROM followers 
 		WHERE user_id = $1 AND following_id = $2
@@ -44,6 +49,8 @@ func (s *FollowerStore) Unfollow(ctx context.Context, followingID, userID int64)
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
+	db := DisplayButton{}
 	_, err := s.db.ExecContext(ctx, query, userID, followingID)
-	return err
+	db.DB = false
+	return db, err
 }

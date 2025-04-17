@@ -85,7 +85,7 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Recoverer)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{env.GetString("CORS_ALLOWED_ORIGIN", "http://localhost:3000")}, // FE URL
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: false,
@@ -158,7 +158,7 @@ func (app *application) mount() http.Handler {
 
 				r.Get("/feed", app.getUserFeedHandler)
 				r.Get("/savedpost", app.getSavedPostHandler)
-				r.Get("/search", app.searchHandler)
+				r.Post("/search", app.searchHandler)
 				r.Post("/logout", app.logoutUserHandler) // log out and inactivate user jwt token
 			})
 		})

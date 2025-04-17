@@ -10,6 +10,11 @@ type LikeStore struct {
 	db *sql.DB
 }
 
+type LikedUsers struct {
+	Userid   int64  `json:"userid"`
+	Username string `json:"username"`
+}
+
 func (s *LikeStore) LikeDislike(ctx context.Context, postID int64, userID int64) (bool, error) {
 	var (
 		exists bool
@@ -40,15 +45,15 @@ func (s *LikeStore) LikeDislike(ctx context.Context, postID int64, userID int64)
 	return exists, err
 }
 
-func (s *LikeStore) GetUsersLike(ctx context.Context, postID int64) ([]string, error) {
+func (s *LikeStore) GetUsersLike(ctx context.Context, postID int64) ([]LikedUsers, error) {
 	query := `
-		SELECT username
+		SELECT users.id, username
 		FROM users
 		JOIN liked 
 		ON users.id = liked.user_id
 		WHERE post_id = $1
 	`
-	var usernameslice []string
+	var usernameslice []LikedUsers
 	rows, err := s.db.QueryContext(ctx, query, postID)
 	if err != nil {
 		switch {
@@ -59,16 +64,16 @@ func (s *LikeStore) GetUsersLike(ctx context.Context, postID int64) ([]string, e
 		}
 	}
 	for rows.Next() {
-		var username string
+		lu := LikedUsers{}
 		err = rows.Scan(
-			&username,
+			&lu.Userid,
+			&lu.Username,
 		)
 		if err != nil {
 			return nil, err
 		}
-		usernameslice = append(usernameslice, username)
+		usernameslice = append(usernameslice, lu)
 	}
-
 	return usernameslice, nil
 }
 

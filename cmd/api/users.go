@@ -25,8 +25,8 @@ type CreateFollowerPayload struct {
 }
 
 type compactUserGrpPayload struct {
-	Id   int64  `json:"id"`
-	Name string `json:"name"`
+	Id   int64  `json:"userid"`
+	Name string `json:"username"`
 }
 
 type searchPayload struct {
@@ -67,11 +67,12 @@ func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request
 
 func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
+	loggedinuser := getUserFromContext(r)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
-	user, err := app.getUserFromRedisCache(r.Context(), userID)
+	user, err := app.getUserFromRedisCache(r.Context(), userID, loggedinuser.ID)
 	if err != nil {
 		switch err {
 		case store.ErrNotFound:
@@ -109,6 +110,7 @@ func (app *application) getUserAllPostsHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request) {
+	var show store.DisplayButton
 	followerUser := getUserFromContext(r)
 	followedID, err := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
 	if err != nil {
@@ -118,7 +120,7 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 
 	ctx := r.Context()
 
-	if err := app.store.Followers.Follow(ctx, followedID, followerUser.ID); err != nil {
+	if show, err = app.store.Followers.Follow(ctx, followedID, followerUser.ID); err != nil {
 		switch err {
 		case store.ErrConflict:
 			app.conflictResponse(w, r, err)
@@ -135,10 +137,14 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 	} else {
 		app.cacheStorage.Users.Set(ctx, 0, followerUser.ID, "following")
 		app.cacheStorage.Users.Set(ctx, 0, followedID, "follower")
+		if err := app.jsonResponse(w, http.StatusOK, show); err != nil {
+			app.internalServerError(w, r, err)
+		}
 	}
 }
 
 func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Request) {
+	var show store.DisplayButton
 	followerUser := getUserFromContext(r)
 	unfollowedID, err := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
 	if err != nil {
@@ -148,7 +154,7 @@ func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Reque
 
 	ctx := r.Context()
 
-	if err := app.store.Followers.Unfollow(ctx, unfollowedID, followerUser.ID); err != nil {
+	if show, err = app.store.Followers.Unfollow(ctx, unfollowedID, followerUser.ID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -159,6 +165,9 @@ func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Reque
 	} else {
 		app.cacheStorage.Users.UnSet(ctx, followerUser.ID, "", "following")
 		app.cacheStorage.Users.UnSet(ctx, unfollowedID, "", "follower")
+		if err := app.jsonResponse(w, http.StatusOK, show); err != nil {
+			app.internalServerError(w, r, err)
+		}
 	}
 }
 

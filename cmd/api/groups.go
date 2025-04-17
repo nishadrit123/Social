@@ -105,13 +105,13 @@ func (app *application) getGroupInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	groupInfo.Name = grpInfo.Name
-	admin, err := app.store.Users.GetByID(r.Context(), grpInfo.CreatedBy)
+	admin, err := app.store.Users.GetByID(r.Context(), grpInfo.CreatedBy, user.ID)
 	if err != nil {
 		app.logger.Errorf("Error while fetching admin %v from group %v, Err: %v", grpInfo.CreatedBy, id, err)
 	}
 	groupInfo.Admin = admin
 	for _, userID := range grpInfo.Members {
-		member, err = app.store.Users.GetByID(r.Context(), userID)
+		member, err = app.store.Users.GetByID(r.Context(), userID, user.ID)
 		if err != nil {
 			app.logger.Errorf("Error while fetching member %v from group %v, Err: %v", userID, id, err)
 			continue

@@ -72,7 +72,8 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) getUserofPostHandler(w http.ResponseWriter, r *http.Request) {
 	ctxpost := getPostFromCtx(r)
-	user, err := app.store.Users.GetByID(r.Context(), ctxpost.UserID)
+	user := getUserFromContext(r)
+	user, err := app.store.Users.GetByID(r.Context(), ctxpost.UserID, user.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

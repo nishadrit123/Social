@@ -19,8 +19,11 @@ type Comment struct {
 }
 
 type PostComment struct {
-	Comment string `json:"comment"`
-	USerID  int64  `json:"user_id"`
+	CommentID          int64  `json:"id"`
+	Comment            string `json:"comment"`
+	USerID             int64  `json:"userid"`
+	UserName           string `json:"username"`
+	ShouldUpdateDelete bool   `json:"should_update_delete"`
 }
 
 func (s *CommentStore) Create(ctx context.Context, comment *Comment) error {
@@ -66,14 +69,16 @@ func (s *CommentStore) GetByID(ctx context.Context, id int64) (*Comment, error) 
 	return &comment, nil
 }
 
-func (s *CommentStore) GetByPostID(ctx context.Context, id int64) ([]PostComment, error) {
+func (s *CommentStore) GetByPostID(ctx context.Context, postID, userID int64) ([]PostComment, error) {
 	query_comment := `
-		SELECT comment, user_id
-		FROM comment
+		SELECT c.id, c.comment, c.user_id, u.username,
+		c.user_id = $2 AS should_update_delete
+		FROM comment as c 
+		LEFT JOIN users as u on u.id = c.user_id
 		WHERE post_id = $1
 	`
 	var commentslice []PostComment
-	rows, err := s.db.QueryContext(ctx, query_comment, id)
+	rows, err := s.db.QueryContext(ctx, query_comment, postID, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -85,8 +90,11 @@ func (s *CommentStore) GetByPostID(ctx context.Context, id int64) ([]PostComment
 	for rows.Next() {
 		var comment PostComment
 		err = rows.Scan(
+			&comment.CommentID,
 			&comment.Comment,
 			&comment.USerID,
+			&comment.UserName,
+			&comment.ShouldUpdateDelete,
 		)
 		if err != nil {
 			return nil, err

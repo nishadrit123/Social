@@ -23,7 +23,7 @@ type Storage struct {
 	}
 	Users interface {
 		Create(context.Context, *sql.Tx, *User) error
-		GetByID(context.Context, int64) (*User, error)
+		GetByID(context.Context, int64, int64) (*User, error)
 		GetPostsByUser(context.Context, int64) ([]Post, error)
 		GetByEmail(context.Context, string) (*User, error)
 		CreateAndInvite(ctx context.Context, user *User, token string, exp time.Duration) error
@@ -38,19 +38,19 @@ type Storage struct {
 	Comment interface {
 		Create(context.Context, *Comment) error
 		GetByID(context.Context, int64) (*Comment, error)
-		GetByPostID(context.Context, int64) ([]PostComment, error)
+		GetByPostID(context.Context, int64, int64) ([]PostComment, error)
 		Update(context.Context, int64, string) error
 		Delete(context.Context, int64) error
 		DeleteByPostID(context.Context, int64) error
 	}
 	Like interface {
 		LikeDislike(context.Context, int64, int64) (bool, error)
-		GetUsersLike(context.Context, int64) ([]string, error)
+		GetUsersLike(context.Context, int64) ([]LikedUsers, error)
 		DeleteByPostID(context.Context, int64) error
 	}
 	Followers interface {
-		Follow(context.Context, int64, int64) error
-		Unfollow(context.Context, int64, int64) error
+		Follow(context.Context, int64, int64) (DisplayButton, error)
+		Unfollow(context.Context, int64, int64) (DisplayButton, error)
 	}
 	Roles interface {
 		GetByName(context.Context, string) (*Role, error)

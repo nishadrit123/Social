@@ -58,13 +58,14 @@ func (app *application) GetLikeCommentCountforPostwithMetadata(r *http.Request, 
 
 func (app *application) AllFollowers(w http.ResponseWriter, r *http.Request, id int64) ([]compactUserGrpPayload, error) {
 	var followers []compactUserGrpPayload
+	user := getUserFromContext(r)
 	followerIDs, err := app.store.Users.GetFollowers(r.Context(), id)
 	if err != nil {
 		return followers, err
 	}
 	for _, followerID := range followerIDs {
 		var followerInfo compactUserGrpPayload
-		follower, err := app.store.Users.GetByID(r.Context(), followerID)
+		follower, err := app.store.Users.GetByID(r.Context(), followerID, user.ID)
 		if err != nil {
 			app.logger.Error("Error fetching user %v, Err: %v", followerID, err)
 			continue
@@ -78,13 +79,14 @@ func (app *application) AllFollowers(w http.ResponseWriter, r *http.Request, id 
 
 func (app *application) AllFollowings(w http.ResponseWriter, r *http.Request, id int64) ([]compactUserGrpPayload, error) {
 	var followings []compactUserGrpPayload
+	user := getUserFromContext(r)
 	followingIDs, err := app.store.Users.GetFollowings(r.Context(), id)
 	if err != nil {
 		return followings, err
 	}
 	for _, followingID := range followingIDs {
 		var followingInfo compactUserGrpPayload
-		following, err := app.store.Users.GetByID(r.Context(), followingID)
+		following, err := app.store.Users.GetByID(r.Context(), followingID, user.ID)
 		if err != nil {
 			app.logger.Error("Error fetching user %v, Err: %v", followingID, err)
 			continue
