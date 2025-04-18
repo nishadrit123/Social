@@ -6,13 +6,16 @@ import {
   FaHeart,
   FaRegHeart,
   FaComment,
+  FaEdit,
+  FaTrash,
 } from "react-icons/fa";
 import axios from "axios";
 import LikedUsersModal from "./LikedUsersModal";
 import CommentsModal from "./CommentsModal";
 import { useNavigate } from "react-router-dom";
+import "../style/PostCard.css";
 
-const PostCard = ({ post }) => {
+const PostCard = ({ post, isOwnProfile, onEdit, onDelete }) => {
   const {
     id,
     title,
@@ -44,6 +47,7 @@ const PostCard = ({ post }) => {
 
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editText, setEditText] = useState("");
+  const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
 
   const handleLike = async () => {
@@ -191,11 +195,42 @@ const PostCard = ({ post }) => {
 
   return (
     <>
-      <div className="card mb-4">
+      <div
+        className="card mb-4"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {isOwnProfile && isHovered && (
+          <div className="post-actions">
+            <button
+              className="action-button delete"
+              onClick={() => onDelete(post.id)}
+              aria-label="Delete Post"
+              title="Delete Post"
+            >
+              <FaTrash />
+            </button>
+            <button
+              className="action-button"
+              onClick={() => onEdit(post)}
+              aria-label="Edit Post"
+              title="Edit Post"
+            >
+              <FaEdit />
+            </button>
+          </div>
+        )}
         <div className="card-body">
           <div className="d-flex justify-content-between">
             <span className="text-muted">
-              <strong onClick={handleUserClick} style={{ cursor: "pointer", fontWeight: "bold", color: "#007bff" }}>
+              <strong
+                onClick={handleUserClick}
+                style={{
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  color: "#007bff",
+                }}
+              >
                 @{user?.username || "anonymous"}
               </strong>
             </span>

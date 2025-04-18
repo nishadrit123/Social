@@ -19,7 +19,6 @@ type CreatePostPayload struct {
 	Title   string   `json:"title" validate:"required,max=100"`
 	Content string   `json:"content" validate:"required,max=1000"`
 	Tags    []string `json:"tags"`
-	Userid  int64    `json:"user_id"`
 }
 
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -156,8 +155,9 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 }
 
 type UpdatePostPayload struct {
-	Title   *string `json:"title" validate:"omitempty,max=100"`
-	Content *string `json:"content" validate:"omitempty,max=1000"`
+	Title   *string  `json:"title" validate:"omitempty,max=100"`
+	Content *string  `json:"content" validate:"omitempty,max=1000"`
+	Tags    []string `json:"tags"`
 }
 
 func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request) {

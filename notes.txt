@@ -30,5 +30,4 @@ Nats
 
 Pending
     concurrency handling 
-    Sending emails to users registered
-    Loading... on home page 
+    saved post loading error upon deleting a post
