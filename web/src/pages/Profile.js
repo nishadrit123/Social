@@ -5,8 +5,10 @@ import { jwtDecode } from "jwt-decode";
 import PostCard from "../components/PostCard";
 import CreatePostModal from "../components/CreatePostModal";
 import LikedUsersModal from "../components/LikedUsersModal";
+import CreateStoryModal from "../components/CreateStoryModal";
+import StoryViewerModal from "../components/StoryViewerModal";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { FiPlus } from "react-icons/fi";
+import { FiPlus, FiCamera } from "react-icons/fi";
 
 const Profile = () => {
   const { userId } = useParams();
@@ -20,6 +22,9 @@ const Profile = () => {
   const [followLoading, setFollowLoading] = useState(false);
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
+  const [showCreateStoryModal, setShowCreateStoryModal] = useState(false);
+  const [stories, setStories] = useState([]);
+  const [showStoryModal, setShowStoryModal] = useState(false);
 
   const token = localStorage.getItem("jwtToken");
   const decoded = jwtDecode(token);
@@ -124,7 +129,7 @@ const Profile = () => {
       setUserPosts((prevPosts) =>
         prevPosts.filter((post) => post.id !== postId)
       );
-      navigate('/home');
+      navigate("/home");
     } catch (error) {
       console.error("Failed to delete post:", error);
     }
@@ -171,6 +176,31 @@ const Profile = () => {
     }
   };
 
+  const handleStoryClick = async () => {
+    try {
+      const token = localStorage.getItem("jwtToken");
+      const profileId = userId || loggedInId;
+
+      const response = await axios.get(
+        `http://localhost:8080/v1/story/get/${profileId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const fetchedStories = response.data.data || [];
+
+      if (fetchedStories.length === 0) {
+        alert("No stories available.");
+      } else {
+        setStories(fetchedStories);
+        setShowStoryModal(true);
+      }
+    } catch (error) {
+      console.error("Failed to fetch stories:", error);
+    }
+  };
+
   if (!user) {
     return <h3 className="text-center">Loading...</h3>;
   }
@@ -191,7 +221,40 @@ const Profile = () => {
           <FiPlus size={18} />
         </button>
       )}
+      {isOwnProfile && (
+        <button
+          style={{ "margin-left": "1080px", "margin-top": "-20px;" }}
+          className="btn btn-outline-primary d-flex align-items-center gap-2 px-3 py-2 rounded"
+          aria-label="Create Story"
+          title="Create Story"
+          onClick={() => setShowCreateStoryModal(true)}
+        >
+          <FiCamera size={18} />
+        </button>
+      )}
       <div className="card mx-auto mb-4" style={{ maxWidth: "600px" }}>
+        <div
+          className="position-absolute"
+          style={{
+            top: "10px",
+            left: "10px",
+            width: "40px",
+            height: "40px",
+            borderRadius: "50%",
+            backgroundColor: "#007bff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            color: "#fff",
+            zIndex: 1,
+          }}
+          onClick={handleStoryClick}
+          title="View Stories"
+        >
+          {String(user.username[0]).toUpperCase()}
+          <i className="fas fa-book-open"></i>
+        </div>
         <div className="card-body">
           <h5 className="card-title text-center">{user.username}</h5>
           <p className="text-muted text-center">{user.email}</p>
@@ -219,7 +282,7 @@ const Profile = () => {
               <p>{user.following_count || 0}</p>
             </div>
           </div>
-  
+
           {isOwnProfile ? (
             <button
               className="btn btn-primary w-100 mt-3"
@@ -247,7 +310,7 @@ const Profile = () => {
           )}
         </div>
       </div>
-  
+
       <h4 className="text-center mb-3">
         {isOwnProfile ? "Your Posts" : `${user.username}'s Posts`}
       </h4>
@@ -271,7 +334,7 @@ const Profile = () => {
           ))}
         </div>
       )}
-  
+
       <LikedUsersModal
         show={showFollowersModal}
         likedUsers={followers}
@@ -295,9 +358,17 @@ const Profile = () => {
         initialData={editingPost}
         onSubmit={handlePostSubmit}
       />
+      <CreateStoryModal
+        show={showCreateStoryModal}
+        onHide={() => setShowCreateStoryModal(false)}
+      />
+      <StoryViewerModal
+        show={showStoryModal}
+        onHide={() => setShowStoryModal(false)}
+        stories={stories}
+      />
     </div>
   );
-  
 };
 
 export default Profile;
