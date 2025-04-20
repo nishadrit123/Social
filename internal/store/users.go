@@ -133,7 +133,7 @@ func (s *UserStore) GetByID(ctx context.Context, userID, loggedInUserID int64) (
 	return user, nil
 }
 
-func (s *UserStore) GetPostsByUser(ctx context.Context, id int64) ([]Post, error) {
+func (s *UserStore) GetPostsByUser(ctx context.Context, id, loggedInUserID int64) ([]Post, error) {
 	// query := `
 	// 	SELECT id, title, content, tags, updated_at
 	// 	FROM posts
@@ -142,17 +142,17 @@ func (s *UserStore) GetPostsByUser(ctx context.Context, id int64) ([]Post, error
 	query := `
 		SELECT p.id, p.user_id, u.username, p.title, p.content, p.created_at,  p.updated_at, p.tags,
 		EXISTS (
-        	SELECT 1 FROM liked l WHERE l.post_id = p.id AND l.user_id = $1
+        	SELECT 1 FROM liked l WHERE l.post_id = p.id AND l.user_id = $2
     	) as is_liked,
     	EXISTS (
-        	SELECT 1 FROM savedpost s WHERE s.savedpost_id = p.id AND s.user_id = $1
+        	SELECT 1 FROM savedpost s WHERE s.savedpost_id = p.id AND s.user_id = $2
     	) as is_saved
 		FROM posts as p LEFT JOIN users AS u
 		ON p.user_id = u.id
 		WHERE u.id = $1
 	`
 	var posts []Post
-	rows, err := s.db.QueryContext(ctx, query, id)
+	rows, err := s.db.QueryContext(ctx, query, id, loggedInUserID)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):

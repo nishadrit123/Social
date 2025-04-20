@@ -96,7 +96,8 @@ func (app *application) getUserAllPostsHandler(w http.ResponseWriter, r *http.Re
 		app.badRequestResponse(w, r, err)
 		return
 	}
-	userPosts, err := app.store.Users.GetPostsByUser(r.Context(), userID)
+	user := getUserFromContext(r)
+	userPosts, err := app.store.Users.GetPostsByUser(r.Context(), userID, user.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

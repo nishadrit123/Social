@@ -31,6 +31,9 @@ const Profile = () => {
   const loggedInId = decoded.sub;
   const isOwnProfile = !userId || userId === String(loggedInId);
   const navigate = useNavigate();
+  const handleMessageClick = () => {
+    navigate(`/chat/${userId}/${user.username}`);
+  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -292,7 +295,12 @@ const Profile = () => {
             </button>
           ) : (
             <div className="d-flex gap-2 mt-3">
-              <button className="btn btn-outline-secondary w-50">TBH</button>
+              <button 
+                className="btn btn-outline-secondary w-50"
+                onClick={handleMessageClick}
+              >
+                Message
+              </button>
               <button
                 className={`btn w-50 ${
                   isFollowing ? "btn-danger" : "btn-outline-primary"

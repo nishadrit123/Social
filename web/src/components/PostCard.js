@@ -220,7 +220,7 @@ const PostCard = ({ post, isOwnProfile, onEdit, onDelete }) => {
             </button>
           </div>
         )}
-        <div className="card-body">
+        <div className="card-body" style={{width: "300px"}}>
           <div className="d-flex justify-content-between">
             <span className="text-muted">
               <strong

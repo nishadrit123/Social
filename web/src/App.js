@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import SavedPosts from "./pages/SavedPosts";
 import SearchPage from './pages/SearchPage';
+import ChatPage from './pages/ChatPage';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/profile/:userId" element={<Profile />} />
         <Route path="/saved-posts" element={<SavedPosts />} />
         <Route path="/search" element={<SearchPage />} />
+        <Route path="/chat/:userId/:username" element={<ChatPage />} />
       </Routes>
     </Router>
   );
