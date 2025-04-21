@@ -347,6 +347,7 @@ const PostCard = ({ post, isOwnProfile, onEdit, onDelete }) => {
         likedUsers={sendToList}
         title="Send Post To"
         emptytitle="No users or groups available"
+        onUserClick={String(post.id)}
       />
     </>
   );
