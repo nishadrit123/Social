@@ -100,7 +100,7 @@ func (app *application) createSaveUnsavePostHandler(w http.ResponseWriter, r *ht
 }
 
 func (app *application) getSendPostHandler(w http.ResponseWriter, r *http.Request) {
-	var sendTo [][]compactUserGrpPayload
+	var sendTo []compactUserGrpPayload
 	ctxuser := getUserFromContext(r)
 
 	followers, _ := app.AllFollowers(w, r, ctxuser.ID)
@@ -108,13 +108,13 @@ func (app *application) getSendPostHandler(w http.ResponseWriter, r *http.Reques
 	groups, _ := app.AllGroups(w, r, ctxuser.ID)
 
 	if len(followers) > 0 {
-		sendTo = append(sendTo, followers)
+		sendTo = append(sendTo, followers...)
 	}
 	if len(followings) > 0 {
-		sendTo = append(sendTo, followings)
+		sendTo = append(sendTo, followings...)
 	}
 	if len(groups) > 0 {
-		sendTo = append(sendTo, groups)
+		sendTo = append(sendTo, groups...)
 	}
 
 	if err := app.jsonResponse(w, http.StatusOK, sendTo); err != nil {

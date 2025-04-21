@@ -25,8 +25,9 @@ type CreateFollowerPayload struct {
 }
 
 type compactUserGrpPayload struct {
-	Id   int64  `json:"userid"`
-	Name string `json:"username"`
+	Id      int64  `json:"userid"`
+	Name    string `json:"username"`
+	IsGroup bool   `json:"is_group"`
 }
 
 type searchPayload struct {

@@ -113,6 +113,7 @@ func (app *application) AllGroups(w http.ResponseWriter, r *http.Request, id int
 		}
 		groupInfo.Id = groupID
 		groupInfo.Name = group.Name
+		groupInfo.IsGroup = true
 		groups = append(groups, groupInfo)
 	}
 	return groups, nil

@@ -8,6 +8,7 @@ import {
   FaComment,
   FaEdit,
   FaTrash,
+  FaPaperPlane,
 } from "react-icons/fa";
 import axios from "axios";
 import LikedUsersModal from "./LikedUsersModal";
@@ -48,6 +49,9 @@ const PostCard = ({ post, isOwnProfile, onEdit, onDelete }) => {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editText, setEditText] = useState("");
   const [isHovered, setIsHovered] = useState(false);
+
+  const [sendToList, setSendToList] = useState([]);
+  const [showSendModal, setShowSendModal] = useState(false);
   const navigate = useNavigate();
 
   const handleLike = async () => {
@@ -95,6 +99,20 @@ const PostCard = ({ post, isOwnProfile, onEdit, onDelete }) => {
     } catch (error) {
       console.error("Save API failed, reverting UI changes...");
       setIsSaved((prev) => !prev);
+    }
+  };
+
+  const handleSendTo = async () => {
+    try {
+      const token = localStorage.getItem("jwtToken");
+      const response = await axios.get(
+        `http://localhost:8080/v1/posts/${id}/sendto`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSendToList(response.data.data);
+      setShowSendModal(true);
+    } catch (error) {
+      console.error("Error fetching send-to list:", error);
     }
   };
 
@@ -220,7 +238,7 @@ const PostCard = ({ post, isOwnProfile, onEdit, onDelete }) => {
             </button>
           </div>
         )}
-        <div className="card-body" style={{width: "300px"}}>
+        <div className="card-body">
           <div className="d-flex justify-content-between">
             <span className="text-muted">
               <strong
@@ -246,7 +264,7 @@ const PostCard = ({ post, isOwnProfile, onEdit, onDelete }) => {
             <strong>Tags:</strong> {tags?.join(", ")}
           </p>
 
-          <div className="d-flex justify-content-between align-items-center mt-3">
+          <div className="d-flex justify-content-between align-items-center mt-4">
             {/* ❤️ Like */}
             <span className="d-flex align-items-center gap-2">
               <span style={{ cursor: "pointer" }} onClick={handleLike}>
@@ -286,6 +304,15 @@ const PostCard = ({ post, isOwnProfile, onEdit, onDelete }) => {
                 <FaRegBookmark color="gray" />
               )}
             </span>
+            <span
+              className="d-flex align-items-center"
+              style={{ color: "blue", cursor: "pointer" }}
+              onClick={handleSendTo}
+              aria-label="Send Post"
+              title="Send Post"
+            >
+              <FaPaperPlane />
+            </span>
           </div>
         </div>
       </div>
@@ -312,6 +339,14 @@ const PostCard = ({ post, isOwnProfile, onEdit, onDelete }) => {
         handleCancelEdit={handleCancelEdit}
         handleEditClick={handleEditClick}
         handleDeleteComment={handleDeleteComment}
+      />
+
+      <LikedUsersModal
+        show={showSendModal}
+        onClose={() => setShowSendModal(false)}
+        likedUsers={sendToList}
+        title="Send Post To"
+        emptytitle="No users or groups available"
       />
     </>
   );
