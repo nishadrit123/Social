@@ -32,4 +32,4 @@ Pending
     concurrency handling 
     saved post loading error upon deleting a post
     following count of test user
-    size of post in chats 
+    size of post in chats

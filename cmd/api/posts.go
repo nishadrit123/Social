@@ -107,11 +107,31 @@ func (app *application) getSendPostHandler(w http.ResponseWriter, r *http.Reques
 	followings, _ := app.AllFollowings(w, r, ctxuser.ID)
 	groups, _ := app.AllGroups(w, r, ctxuser.ID)
 
-	if len(followers) > 0 {
-		sendTo = append(sendTo, followers...)
+	unique_friends := make(map[compactUserGrpPayload]bool)
+	for _, follower_friend := range followers {
+		unique_friends[follower_friend] = true
 	}
-	if len(followings) > 0 {
-		sendTo = append(sendTo, followings...)
+	for _, following_fried := range followings {
+		if _, exists := unique_friends[following_fried]; !exists {
+			unique_friends[following_fried] = true
+		}
+	}
+
+	// if len(followers) > 0 {
+	// 	sendTo = append(sendTo, followers...)
+	// }
+	// if len(followings) > 0 {
+	// 	sendTo = append(sendTo, followings...)
+	// }
+	// followers = append(followers, followings...)
+	// for _, all := range followers {
+	// 	if _, exists := unique_friends[all.Name]; exists {
+	// 		sendTo = append(sendTo, all)
+	// 		unique_friends[all.Name] = false
+	// 	}
+	// }
+	for friend := range unique_friends {
+		sendTo = append(sendTo, friend)
 	}
 	if len(groups) > 0 {
 		sendTo = append(sendTo, groups...)
