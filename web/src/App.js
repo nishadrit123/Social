@@ -7,6 +7,7 @@ import Profile from "./pages/Profile";
 import SavedPosts from "./pages/SavedPosts";
 import SearchPage from './pages/SearchPage';
 import ChatPage from './pages/ChatPage';
+import GroupChatPage from './pages/GroupChatPage';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/saved-posts" element={<SavedPosts />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/chat/:userId/:username" element={<ChatPage />} />
+        <Route path="/group/:userId/:username" element={<GroupChatPage />} />
       </Routes>
     </Router>
   );

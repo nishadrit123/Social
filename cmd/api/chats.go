@@ -164,6 +164,10 @@ func (app *application) FetchAllChats(w http.ResponseWriter, r *http.Request, su
 				app.logger.Errorf("Error unmarshalling post for chat, Err: %v", err)
 			}
 		}
+		if !is_user { // fetch sender_name for group chats
+			chatUser, _ := app.store.Users.GetByID(r.Context(), allChats[i].SenderID, user.ID)
+			allChats[i].SenderName = chatUser.Username
+		}
 	}
 	if err := app.jsonResponse(w, http.StatusOK, allChats); err != nil {
 		app.internalServerError(w, r, err)

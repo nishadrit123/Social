@@ -49,6 +49,8 @@ const SearchPage = () => {
   const handleChatSelect = (chat) => {
     if (!chat.is_group) {
       navigate(`/chat/${chat.userid}/${chat.username}`);
+    } else {
+      navigate(`/group/${chat.userid}/${chat.username}`);
     }
   };
 

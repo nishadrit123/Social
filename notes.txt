@@ -32,5 +32,6 @@ Pending
     concurrency handling 
     saved post loading error upon deleting a post
     following count of test user
-    size of post in chats
+    navigate to user profile upon clicking usernames in group chats
     differntiate between users and groups in chatwindow and send button
+    gitignore node_modules folder
