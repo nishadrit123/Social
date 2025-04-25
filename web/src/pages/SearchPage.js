@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 import LikedUsersModal from "../components/LikedUsersModal";
+import ChatList from "../components/ChatList";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const SearchPage = () => {
@@ -11,6 +13,7 @@ const SearchPage = () => {
   const [isAddingToGroup, setIsAddingToGroup] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const navigate = useNavigate();
 
   const handleKeyDown = async (e, addingToGroup = false) => {
     if (e.key === "Enter") {
@@ -43,6 +46,12 @@ const SearchPage = () => {
     setShowGroupModal(true);
   };
 
+  const handleChatSelect = (chat) => {
+    if (!chat.is_group) {
+      navigate(`/chat/${chat.userid}/${chat.username}`);
+    }
+  };
+
   const handleCreateGroupClick = async () => {
     const token = localStorage.getItem("jwtToken");
     const payload = {
@@ -69,6 +78,7 @@ const SearchPage = () => {
       } else {
         alert("Failed to create group. Please try again.");
       }
+      window.location.reload();
     } catch (error) {
       console.error("Error creating group:", error);
       alert("An error occurred while creating the group.");
@@ -119,8 +129,8 @@ const SearchPage = () => {
       </div>
 
       {/* Bottom 90%: Reserved for future features */}
-      <div style={{ flex: "1", padding: "10px" }}>
-        {/* Content to be added later */}
+      <div style={{ flex: "1", padding: "80px" }}>
+        <ChatList onChatSelect={handleChatSelect} />
       </div>
 
       {/* LikedUsersModal to display search results */}

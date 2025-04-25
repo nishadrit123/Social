@@ -33,3 +33,4 @@ Pending
     saved post loading error upon deleting a post
     following count of test user
     size of post in chats
+    differntiate between users and groups in chatwindow and send button
