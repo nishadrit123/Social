@@ -7,10 +7,27 @@
 .sender-name {
   font-weight: bold;
   color: #1e88e5; /* Distinctive blue color */
-  margin-right: 8px;
+  /* margin-right: 8px; */
 }
 
 .message-date {
   font-size: 0.85em;
   color: #757575;
+}
+
+.group-info {
+  background-color: #f1f1f1;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.group-info h3,
+.group-info h4 {
+  margin: 5px 0;
+}
+
+.group-info ul {
+  list-style-type: disc;
+  padding-left: 20px;
 }
