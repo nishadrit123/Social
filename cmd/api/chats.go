@@ -153,6 +153,7 @@ func (app *application) FetchAllChats(w http.ResponseWriter, r *http.Request, su
 			post, err := app.store.Posts.GetByID(r.Context(), allChats[i].PostID, user.ID)
 			if err != nil {
 				app.logger.Errorf("Error fetching post by id for chats, Err: %v", err)
+				continue
 			}
 			app.GetLikeCommentCountforPost(r, post)
 			bytePost, err := json.Marshal(post)

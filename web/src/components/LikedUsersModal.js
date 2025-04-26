@@ -53,7 +53,12 @@ const LikedUsersModal = ({
   };
 
   return (
-    <div className="modal d-block" tabIndex="-1" onClick={onClose} style={{position: "absolute", zIndex: 1060}}>
+    <div
+      className="modal d-block"
+      tabIndex="-1"
+      onClick={onClose}
+      style={{ position: "absolute", zIndex: 1060 }}
+    >
       <div
         className="modal-dialog modal-dialog-centered"
         role="document"
@@ -82,13 +87,20 @@ const LikedUsersModal = ({
                       if (onUserClick) {
                         handleSendPost(user.userid, user.is_group, onUserClick);
                       } else if (onUserSelect) {
-                        onUserSelect(user)
+                        onUserSelect(user);
                       } else {
                         handleUserClick(user.userid);
                       }
                     }}
                   >
-                    @{user.username}
+                    {onUserClick ? (
+                      <>
+                        {user.is_group ? "👥" : "👤"}&nbsp;&nbsp;&nbsp;@
+                        {user.username}
+                      </>
+                    ) : (
+                      <>@{user.username}</>
+                    )}
                   </li>
                 ))}
               </ul>

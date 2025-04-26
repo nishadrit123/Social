@@ -29,9 +29,7 @@ Nats
         Chatting, sending posts 
 
 Pending
-    concurrency handling 
-    saved post loading error upon deleting a post
+    concurrency handling
     following count of test user
-    differntiate between users and groups in chatwindow and send button
+    error while posting first text message in a group or user
     gitignore node_modules folder
-    add group icon to extreme right of group chat page

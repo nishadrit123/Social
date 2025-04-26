@@ -1,4 +1,3 @@
-// src/components/ChatList.js
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -10,11 +9,14 @@ const ChatList = ({ onChatSelect }) => {
     const fetchChatList = async () => {
       try {
         const token = localStorage.getItem("jwtToken");
-        const response = await axios.get("http://localhost:8080/v1/chat/chatwindow", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await axios.get(
+          "http://localhost:8080/v1/chat/chatwindow",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         setChatList(response.data.data || []);
       } catch (error) {
         console.error("Error fetching chat list:", error);
@@ -37,7 +39,11 @@ const ChatList = ({ onChatSelect }) => {
             onClick={() => onChatSelect(chat)}
             style={{ cursor: "pointer" }}
           >
-            {chat.username}
+            {chat.is_group ? (
+              <>👥&nbsp;&nbsp;&nbsp;{chat.username}</>
+            ) : (
+              <>👤&nbsp;&nbsp;&nbsp;{chat.username}</>
+            )}
           </li>
         ))}
       </ul>

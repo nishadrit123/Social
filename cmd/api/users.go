@@ -281,8 +281,8 @@ func (app *application) getSavedPostHandler(w http.ResponseWriter, r *http.Reque
 	for _, savedPostsID := range savedPostsIDS {
 		savedPost, err := app.store.Posts.GetByID(r.Context(), savedPostsID, user.ID)
 		if err != nil {
-			app.internalServerError(w, r, err)
-			return
+			app.logger.Errorf("Error fetching post %v, Err: %v\n", savedPostsID, err)
+			continue
 		}
 		app.GetLikeCommentCountforPost(r, savedPost)
 		savedPosts = append(savedPosts, *savedPost)

@@ -219,11 +219,11 @@ const GroupChatPage = () => {
 
   return (
     <div className="chat-container">
-      <header className="chat-header" style={{display: "flex"}}>
+      <header className="chat-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h2 style={{ cursor: "pointer", color: "#1e88e5" }} onClick={handleGroupNameClick}>
           {username}
         </h2>
-        <h4 onClick={handleShowAddMemberModalClick} style={{cursor:"pointer", marginTop: "6px", marginLeft: "1037px"}}>
+        <h4 onClick={handleShowAddMemberModalClick} style={{cursor:"pointer", marginTop: "6px"}}>
           👥+
         </h4>
       </header>
