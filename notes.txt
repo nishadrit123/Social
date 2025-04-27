@@ -30,6 +30,4 @@ Nats
 
 Pending
     concurrency handling
-    following count of test user
-    error while posting first text message in a group or user
     gitignore node_modules folder

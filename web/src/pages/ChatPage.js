@@ -25,7 +25,7 @@ const ChatPage = () => {
             },
           }
         );
-        setMessages(response.data.data);
+        setMessages(response.data.data || []);
       } catch (error) {
         console.error("Error fetching chat:", error);
       }
