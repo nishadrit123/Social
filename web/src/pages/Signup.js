@@ -31,13 +31,11 @@ const Signup = () => {
         email: formData.email,
         password: formData.password,
       });
-      console.log("Signup Response:", response.data);
       
       // Extract token and activate user
       const token = response.data.data.token;
       if (token) {
         await axios.put(`http://localhost:8080/v1/users/activate/${token}`);
-        console.log("User activation request sent");
       }
       
       // Redirect to login page upon successful signup and activation

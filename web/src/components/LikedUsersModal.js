@@ -13,6 +13,8 @@ const LikedUsersModal = ({
   onUserSelect,
 }) => {
   const navigate = useNavigate();
+  const members = [];
+  let unique_members = [];
 
   if (!show) return null;
 
@@ -29,11 +31,42 @@ const LikedUsersModal = ({
     }
     const decoded = jwtDecode(token);
     const loggedInUserId = decoded.sub;
+    let socket = null 
+    if (is_group) {
+      try {
+        const response = await axios.get(
+          `http://localhost:8080/v1/group/info/${userid}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const info = response.data.data;
+        if (loggedInUserId !== info.admin.id) {
+          members.push(info.admin.id);
+        }
+        info.members.forEach((member) => {
+          if (loggedInUserId !== member.id) {
+            members.push(member.id);
+          }
+        });
+        const unique = new Set(members)
+        unique_members = [...unique] 
+        unique_members.unshift(userid) // prepend groupID to array for websocket display 
+      } catch (error) {
+        console.error("Error fetching group info:", error);
+      }
+      socket = new WebSocket(`ws://localhost:5500/ws?clientid=${loggedInUserId}&members=${unique_members}`);
+    } else {
+      socket = new WebSocket(`ws://localhost:5500/ws?clientid=${loggedInUserId}&targetid=${userid}`);
+    }
 
     const payload = {
       sender_id: loggedInUserId,
       receiver_id: userid,
       post_id: Number(postId),
+      date: new Date().toISOString(),
     };
 
     const endpoint = is_group
@@ -41,11 +74,21 @@ const LikedUsersModal = ({
       : `http://localhost:8080/v1/chat/user/${userid}/`;
 
     try {
-      await axios.post(endpoint, payload, {
+      const response = await axios.post(endpoint, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+      const resp_post = response.data.data
+      const newpayload = {
+        sender_id: loggedInUserId,
+        receiver_id: userid,
+        post_id: Number(postId),
+        post: resp_post,
+        sender_name: resp_post.updated_at,
+        date: new Date().toISOString(),
+      };
+      socket.send(JSON.stringify(newpayload))
       onClose();
     } catch (error) {
       console.error("Error sending post:", error);

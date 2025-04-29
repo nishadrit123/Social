@@ -6,8 +6,12 @@ To run
         1. docker-compose build
         2. docker-compose up -d 
         3. Do "air" (air-verse performs go hot reload)
-    b. frontend
-        1. npm run dev inside web directory
+    b. WebSocket
+        1. cd websocket 
+        2. go run websocket.go 
+    c. frontend
+        1. cd web 
+        2. npm start
 
 To push 
     a. Do git push origin master 
@@ -27,6 +31,12 @@ Nats
         Notification, online/offline status, typing indicator in chat
     b. Jetstream 
         Chatting, sending posts 
+
+WebSocket
+    a. Used for real time Chatting between users and group without the need of reloading the page
+    b. Websocket channel is as follows 
+        1. Users: senderID (user) -> receiverID (user)
+        2. Group: senderID (user) -> groupID (group) - receiverID (all users of that group) 
 
 Pending
     concurrency handling

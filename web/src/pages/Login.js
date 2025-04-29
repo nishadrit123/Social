@@ -17,11 +17,7 @@ const Login = () => {
         email,
         password,
       });
-      console.log(response) 
       localStorage.setItem("jwtToken", response.data.data);
-      console.log("response: ", response)
-      console.log("response data: ", response.data) 
-      console.log("Saved Token:", localStorage.getItem("jwtToken"));
       // setMessage("Login Successful!");
       navigate("/home");
     } catch (err) {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"social/internal/store"
 	"strconv"
 	"strings"
 	"time"
@@ -85,15 +86,28 @@ func (app *application) postChat(w http.ResponseWriter, r *http.Request) {
 	// since a text message is being sent, all the previous chats/posts are supposed to be displayed unlike in
 	// case of sending a post where no previous chats/posts are supposed to be displayed
 	if payload.Text != "" {
-		if !is_user {
-			subject = fmt.Sprintf("chat.group.*.%v", receiverID)
+		// if !is_user {
+		// 	subject = fmt.Sprintf("chat.group.*.%v", receiverID)
+		// }
+		// app.FetchAllChats(w, r, subject, is_user)
+		if err := app.jsonResponse(w, http.StatusOK, sender.Username); err != nil {
+			app.internalServerError(w, r, err)
+			return
 		}
-		app.FetchAllChats(w, r, subject, is_user)
 		return
-	}
-
-	if err := app.jsonResponse(w, http.StatusOK, "SENT"); err != nil {
-		app.internalServerError(w, r, err)
+	} else {
+		var post *store.Post
+		if is_user {
+			post, _ = app.store.Posts.GetByID(r.Context(), payload.PostID, receiverID)
+		} else {
+			post, _ = app.store.Posts.GetByID(r.Context(), payload.PostID, senderID)
+		}
+		post.UpdatedAt = sender.Username // workaroud to display username on UI in case of websocket
+		app.GetLikeCommentCountforPost(r, post)
+		if err := app.jsonResponse(w, http.StatusOK, post); err != nil {
+			app.internalServerError(w, r, err)
+			return
+		}
 		return
 	}
 }

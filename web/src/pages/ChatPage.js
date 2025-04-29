@@ -13,6 +13,7 @@ const ChatPage = () => {
   const token = localStorage.getItem("jwtToken");
   const decoded = jwtDecode(token);
   const loggedInUserId = decoded.sub;
+  const socketRef = useRef(null);
 
   useEffect(() => {
     const fetchChat = async () => {
@@ -34,6 +35,23 @@ const ChatPage = () => {
     fetchChat();
   }, [userId, token]);
 
+  useEffect(() => {
+    socketRef.current = new WebSocket(`ws://localhost:5500/ws?clientid=${loggedInUserId}&targetid=${userId}`);
+  
+    socketRef.current.onmessage = function (event) {
+      try {
+        const incomingMessage = JSON.parse(event.data);
+        setMessages((prev) => [...prev, incomingMessage]);
+      } catch (err) {
+        console.error("WebSocket parse error:", err);
+      }
+    };
+  
+    // return () => {
+    //   socketRef.current?.close();
+    // };
+  }, [loggedInUserId, userId]);   
+
   const handleInputChange = (e) => {
     setMessageText(e.target.value);
   };
@@ -47,31 +65,6 @@ const ChatPage = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);  
-
-  // const handleSendMessage = async () => {
-  //   if (!messageText.trim()) return;
-
-  //   const payload = {
-  //     sender_id: Number(loggedInUserId), 
-  //     receiver_id: Number(userId), 
-  //     text: messageText.trim(),
-  //   };
-
-  //   try {
-  //     const response = await axios.post(
-  //       `http://localhost:8080/v1/chat/user/${userId}`,
-  //       payload,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     setMessageText(""); // Clear the input field
-  //   } catch (error) {
-  //     console.error("Error sending message:", error);
-  //   }
-  // };
 
   const handleSendMessage = async () => {
     if (!messageText.trim()) return;
@@ -104,6 +97,16 @@ const ChatPage = () => {
           },
         }
       );
+
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        const websocketPayload = {
+          sender_id: newMessage.sender_id,
+          receiver_id: newMessage.receiver_id,
+          text: newMessage.text,
+          date: newMessage.date,
+        };
+        socketRef.current.send(JSON.stringify(websocketPayload));
+      }           
   
       // Since the API doesn't return the saved message, we assume success
       // Optionally, you can update the status to 'sent' if you wish
@@ -122,22 +125,6 @@ const ChatPage = () => {
       );
     }
   };  
-
-  // const ChatMessage = ({ message, isOwnMessage }) => {
-  //   return (
-  //     <div className={`chat-message ${isOwnMessage ? "own" : "other"}`}>
-  //       <div className="message-date">
-  //         {new Date(message.date).toLocaleString()}
-  //       </div>
-  //       {message.text && (
-  //         <p className={`message ${isOwnMessage ? "own" : "other"}`}>
-  //           {message.text}
-  //         </p>
-  //       )}
-  //       {message.post && <PostCard post={message.post} />}
-  //     </div>
-  //   );
-  // };
 
   const ChatMessage = ({ message, isOwnMessage }) => {
     return (

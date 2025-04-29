@@ -17,7 +17,6 @@ const CreatePostModal = ({ show, onHide, initialData = {}, onSubmit }) => {
   }, [initialData]);
 
   const handleSubmit = async (e) => {
-    console.log('here')
     e.preventDefault();
     const payload = {
       title,

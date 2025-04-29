@@ -20,6 +20,7 @@ const GroupChatPage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const chatMessagesRef = useRef(null);
+  const socketRef = useRef(null);
 
   const token = localStorage.getItem("jwtToken");
   const decoded = jwtDecode(token);
@@ -29,19 +30,89 @@ const GroupChatPage = () => {
   useEffect(() => {
     const fetchGroupChat = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/v1/chat/group/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setMessages(response.data.data);
+        const response = await axios.get(
+          `http://localhost:8080/v1/chat/group/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setMessages(response.data.data || []);
       } catch (error) {
         console.error("Error fetching group chat:", error);
       }
     };
 
     fetchGroupChat();
-  }, [userId, token]);
+  }, [userId, token]);   
+
+  // useEffect(() => {
+  //   const grpMembers = async () => {
+  //     try {
+  //       const response = await axios.get(
+  //         `http://localhost:8080/v1/group/info/${userId}`,
+  //         {
+  //           headers: {
+  //             Authorization: `Bearer ${token}`,
+  //           },
+  //         }
+  //       );
+  //       const info = response.data.data;
+  //       if (loggedInUserId !== info.admin.id) {
+  //         members.push(info.admin.id);
+  //       }
+  //       info.members.forEach((member) => {
+  //         if (loggedInUserId !== member.id) {
+  //           members.push(member.id);
+  //         }
+  //       });
+  //       const unique = new Set(members)
+  //       unique_members = [...unique] 
+  //       console.log(unique_members);
+  //     } catch (error) {
+  //       console.error("Error fetching group info:", error);
+  //     }
+  //   };
+  //   grpMembers();
+  // }, [userId, token]);
+
+  useEffect(() => {
+    let unique_members = [];
+    const members = [];
+    const prepare = async() => {
+    const response = await axios.get(
+      `http://localhost:8080/v1/group/info/${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    const info = response.data.data;
+    if (loggedInUserId !== info.admin.id) {
+      members.push(info.admin.id);
+    }
+    info.members.forEach((member) => {
+      if (loggedInUserId !== member.id) {
+        members.push(member.id);
+      }
+    });
+    const unique = new Set(members)
+    unique_members = [...unique] 
+    unique_members.unshift(userId) // prepend groupID to array for websocket display
+    socketRef.current = new WebSocket(`ws://localhost:5500/ws?clientid=${loggedInUserId}&members=${unique_members}`);
+    socketRef.current.onmessage = function (event) {
+      try {
+        const incomingMessage = JSON.parse(event.data);
+        setMessages((prev) => [...prev, incomingMessage]);
+      } catch (err) {
+        console.error("WebSocket parse error:", err);
+      }
+    };
+    };
+    prepare()
+  }, [loggedInUserId, userId, token]);
 
   const handleInputChange = (e) => {
     setMessageText(e.target.value);
@@ -143,14 +214,14 @@ const GroupChatPage = () => {
       text: messageText.trim(),
       date: new Date().toISOString(),
       sender_name: "You",
-      status: 'sending',
+      status: "sending",
     };
 
     setMessages((prevMessages) => [...prevMessages, newMessage]);
-    setMessageText('');
+    setMessageText("");
 
     try {
-      await axios.post(
+      const response = await axios.post(
         `http://localhost:8080/v1/chat/group/${userId}`,
         {
           sender_id: Number(loggedInUserId),
@@ -164,16 +235,27 @@ const GroupChatPage = () => {
         }
       );
 
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        const websocketPayload = {
+          sender_id: newMessage.sender_id,
+          receiver_id: newMessage.receiver_id,
+          text: newMessage.text,
+          date: newMessage.date,
+          sender_name: response.data.data
+        };
+        socketRef.current.send(JSON.stringify(websocketPayload));
+      }      
+
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
-          msg.id === tempId ? { ...msg, status: 'sent' } : msg
+          msg.id === tempId ? { ...msg, status: "sent" } : msg
         )
       );
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
-          msg.id === tempId ? { ...msg, status: 'failed' } : msg
+          msg.id === tempId ? { ...msg, status: "failed" } : msg
         )
       );
     }
@@ -181,13 +263,17 @@ const GroupChatPage = () => {
 
   const handleGroupNameClick = async () => {
     try {
-      const response = await axios.get(`http://localhost:8080/v1/group/info/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(
+        `http://localhost:8080/v1/group/info/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setGroupInfo(response.data.data);
       setShowGroupInfo(true);
+      return response.data.data;
     } catch (error) {
       console.error("Error fetching group info:", error);
     }
@@ -195,10 +281,13 @@ const GroupChatPage = () => {
 
   const ChatMessage = ({ message, isOwnMessage }) => {
     return (
-      <div className={`chat-message ${isOwnMessage ? 'own' : 'other'}`}>
+      <div className={`chat-message ${isOwnMessage ? "own" : "other"}`}>
         <div className="sender-info">
-          <span className="sender-name" style={{ cursor: "pointer", color: "#0d6efd", display: "block" }}
-          onClick={() => handleUserClick(message.sender_id)}>
+          <span
+            className="sender-name"
+            style={{ cursor: "pointer", color: "#0d6efd", display: "block" }}
+            onClick={() => handleUserClick(message.sender_id)}
+          >
             {message.sender_name}
           </span>
           <span className="message-date">
@@ -206,10 +295,14 @@ const GroupChatPage = () => {
           </span>
         </div>
         {message.text && (
-          <p className={`message ${isOwnMessage ? 'own' : 'other'}`}>
+          <p className={`message ${isOwnMessage ? "own" : "other"}`}>
             {message.text}
-            {message.status === 'sending' && <span className="status"> (Sending...)</span>}
-            {message.status === 'failed' && <span className="status"> (Failed to send)</span>}
+            {message.status === "sending" && (
+              <span className="status"> (Sending...)</span>
+            )}
+            {message.status === "failed" && (
+              <span className="status"> (Failed to send)</span>
+            )}
           </p>
         )}
         {message.post && <PostCard post={message.post} />}
@@ -219,11 +312,24 @@ const GroupChatPage = () => {
 
   return (
     <div className="chat-container">
-      <header className="chat-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h2 style={{ cursor: "pointer", color: "#1e88e5" }} onClick={handleGroupNameClick}>
+      <header
+        className="chat-header"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <h2
+          style={{ cursor: "pointer", color: "#1e88e5" }}
+          onClick={handleGroupNameClick}
+        >
           {username}
         </h2>
-        <h4 onClick={handleShowAddMemberModalClick} style={{cursor:"pointer", marginTop: "6px"}}>
+        <h4
+          onClick={handleShowAddMemberModalClick}
+          style={{ cursor: "pointer", marginTop: "6px" }}
+        >
           👥+
         </h4>
       </header>
